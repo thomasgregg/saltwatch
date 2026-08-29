@@ -1,0 +1,21 @@
+# ESPHome secrets and generated build output
+secrets.yaml
+.esphome/
+build/
+*.bin
+*.elf
+*.map
+*.log
+
+# The versioned factory image is intentionally published for ESP Web Tools.
+!docs/*.factory.bin
+
+# Local environments and tooling
+.venv/
+venv/
+.env
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~

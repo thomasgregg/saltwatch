@@ -1,0 +1,35 @@
+name: ESPHome validation
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-and-compile:
+    runs-on: ubuntu-latest
+    container: ghcr.io/esphome/esphome:2026.8.1
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create validation-only secrets
+        run: |
+          cp secrets.yaml.example secrets.yaml
+          sed -i 's/YOUR_WIFI_SSID/VALIDATION_ONLY/' secrets.yaml
+          sed -i 's/YOUR_UNIQUE_WIFI_PASSWORD/validation-only-password/' secrets.yaml
+          sed -i 's|PASTE_A_32_BYTE_BASE64_KEY_HERE|MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=|' secrets.yaml
+          sed -i 's/YOUR_UNIQUE_LONG_OTA_PASSWORD/validation-only-ota-password/' secrets.yaml
+
+      - name: Validate production configuration
+        run: esphome config saltwatch.yaml
+
+      - name: Compile production firmware
+        run: esphome compile saltwatch.yaml
+
+      - name: Validate web-installer configuration
+        run: esphome config saltwatch-webinstall.yaml
+
+      - name: Compile web-installer firmware
+        run: esphome compile saltwatch-webinstall.yaml

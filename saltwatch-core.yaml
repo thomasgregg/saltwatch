@@ -1,0 +1,461 @@
+substitutions:
+  project_version: "1.1.0"
+  sensor_min_cm: "5.0"
+  sensor_max_cm: "120.0"
+  minimum_calibration_span_cm: "10.0"
+  measurement_timeout_ms: "180000"
+  invalid_reading_limit: "3"
+  low_salt_hysteresis_percent: "5.0"
+
+esphome:
+  name: saltwatch
+  friendly_name: SaltWatch
+  name_add_mac_suffix: false
+  project:
+    name: saltwatch.salt-monitor
+    version: "${project_version}"
+  on_boot:
+    - priority: 800
+      then:
+        - lambda: |-
+            ESP_LOGI("saltwatch", "SaltWatch firmware ${project_version} starting");
+    - priority: -100
+      then:
+        - delay: 3s
+        - lambda: |-
+            if (id(tof_distance).is_failed()) {
+              ESP_LOGE("sensor", "VL53L0X unavailable on I2C address 0x29");
+            } else {
+              ESP_LOGI("sensor", "VL53L0X detected on I2C address 0x29");
+            }
+        - script.execute: evaluate_state
+
+esp32:
+  board: m5stack-atom
+  framework:
+    type: esp-idf
+
+preferences:
+  # Calibration changes are rare and should survive an immediate power loss.
+  flash_write_interval: 1s
+
+logger:
+  level: INFO
+  baud_rate: 115200
+
+# Credential-free network defaults shared by manual and dashboard-adopted builds.
+# The entry-point YAML supplies credentials and the API encryption key.
+wifi:
+  reboot_timeout: 0s
+
+api:
+  id: saltwatch_api
+  reboot_timeout: 0s
+
+i2c:
+  sda: GPIO26
+  scl: GPIO32
+  scan: true
+
+globals:
+  - id: full_calibration_completed
+    type: bool
+    restore_value: true
+    initial_value: "false"
+
+  - id: empty_calibration_completed
+    type: bool
+    restore_value: true
+    initial_value: "false"
+
+  - id: has_valid_measurement
+    type: bool
+    restore_value: false
+    initial_value: "false"
+
+  - id: last_valid_measurement_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: "0"
+
+  - id: consecutive_invalid_readings
+    type: int
+    restore_value: false
+    initial_value: "0"
+
+  - id: calibration_was_valid
+    type: bool
+    restore_value: false
+    initial_value: "false"
+
+  - id: i2c_missing_observed
+    type: bool
+    restore_value: false
+    initial_value: "false"
+
+script:
+  - id: evaluate_state
+    mode: restart
+    then:
+      - lambda: |-
+          const uint32_t now = millis();
+          const uint32_t measurement_timeout = ${measurement_timeout_ms};
+
+          const bool initializing =
+              !id(has_valid_measurement) && now < measurement_timeout;
+
+          bool fault = false;
+          if (!initializing) {
+            if (!id(has_valid_measurement)) {
+              fault = true;
+            } else if ((now - id(last_valid_measurement_ms)) >= measurement_timeout) {
+              fault = true;
+            } else if (id(consecutive_invalid_readings) >= ${invalid_reading_limit}) {
+              fault = true;
+            }
+          }
+
+          const bool previous_fault =
+              id(sensor_fault).has_state() && id(sensor_fault).state;
+          if (fault != previous_fault) {
+            if (fault) {
+              ESP_LOGE("sensor", "Sensor Fault activated");
+            } else {
+              ESP_LOGI("sensor", "Sensor Fault cleared");
+            }
+          }
+          id(sensor_fault).publish_state(fault);
+
+          // Never leave a stale public distance visible while a fault is active.
+          if (fault && id(distance_to_salt).has_state() &&
+              std::isfinite(id(distance_to_salt).state)) {
+            id(distance_to_salt).publish_state(NAN);
+          }
+
+          const float full = id(full_distance).state;
+          const float empty = id(empty_distance).state;
+          const bool calibration_valid =
+              id(full_calibration_completed) &&
+              id(empty_calibration_completed) &&
+              std::isfinite(full) && std::isfinite(empty) &&
+              full >= ${sensor_min_cm} && full <= ${sensor_max_cm} &&
+              empty >= ${sensor_min_cm} && empty <= ${sensor_max_cm} &&
+              full < empty &&
+              (empty - full) >= ${minimum_calibration_span_cm};
+
+          if (calibration_valid != id(calibration_was_valid)) {
+            if (calibration_valid) {
+              ESP_LOGI("calibration", "Calibration becomes valid (full %.1f cm, empty %.1f cm)",
+                       full, empty);
+            } else {
+              ESP_LOGW("calibration", "Calibration becomes invalid");
+            }
+            id(calibration_was_valid) = calibration_valid;
+          }
+
+          id(calibration_required).publish_state(!calibration_valid);
+
+          float salt_percent = NAN;
+          const float distance = id(distance_to_salt).state;
+          if (!fault && calibration_valid &&
+              id(distance_to_salt).has_state() && std::isfinite(distance)) {
+            const float span = empty - full;
+            if (span >= ${minimum_calibration_span_cm}) {
+              salt_percent = ((empty - distance) / span) * 100.0f;
+              salt_percent = std::max(0.0f, std::min(100.0f, salt_percent));
+            }
+          }
+          id(salt_level).publish_state(salt_percent);
+
+          bool low = false;
+          if (!fault && calibration_valid && std::isfinite(salt_percent)) {
+            const float threshold = id(low_salt_threshold).state;
+            const bool was_low = id(low_salt).has_state() && id(low_salt).state;
+            if (was_low) {
+              // Equality stays low; clear only above threshold + five points.
+              low = salt_percent <= (threshold + ${low_salt_hysteresis_percent});
+            } else {
+              // Equality counts as low.
+              low = salt_percent <= threshold;
+            }
+          }
+
+          const bool previous_low = id(low_salt).has_state() && id(low_salt).state;
+          if (low != previous_low) {
+            if (low) {
+              ESP_LOGW("salt", "Low Salt activated");
+            } else {
+              ESP_LOGI("salt", "Low Salt cleared");
+            }
+          }
+          id(low_salt).publish_state(low);
+
+          // Salt Status is a direct priority view of the entities above.
+          std::string status;
+          if (initializing) {
+            status = "Initializing";
+          } else if (id(sensor_fault).state) {
+            status = "Sensor Fault";
+          } else if (id(calibration_required).state) {
+            status = "Calibration Required";
+          } else if (id(low_salt).state) {
+            status = "Low Salt";
+          } else {
+            status = "Good";
+          }
+
+          if (!id(salt_status).has_state() || id(salt_status).state != status) {
+            id(salt_status).publish_state(status);
+          }
+
+number:
+  - platform: template
+    name: "Full Distance"
+    id: full_distance
+    entity_category: config
+    unit_of_measurement: "cm"
+    device_class: distance
+    mode: box
+    min_value: 5
+    max_value: 120
+    step: 0.1
+    initial_value: 20
+    restore_value: true
+    set_action:
+      - lambda: |-
+          id(full_distance).publish_state(x);
+          id(full_calibration_completed) = true;
+          ESP_LOGI("calibration", "Full calibration captured: %.1f cm", x);
+
+          if (!id(empty_calibration_completed)) {
+            ESP_LOGW("calibration", "Calibration rejected: Empty calibration is incomplete");
+          } else {
+            const float empty = id(empty_distance).state;
+            if (x >= empty) {
+              ESP_LOGW("calibration", "Calibration rejected: Full Distance must be less than Empty Distance");
+            } else if ((empty - x) < ${minimum_calibration_span_cm}) {
+              ESP_LOGW("calibration", "Calibration rejected: span must be at least 10.0 cm");
+            }
+          }
+      - script.execute: evaluate_state
+
+  - platform: template
+    name: "Empty Distance"
+    id: empty_distance
+    entity_category: config
+    unit_of_measurement: "cm"
+    device_class: distance
+    mode: box
+    min_value: 5
+    max_value: 120
+    step: 0.1
+    initial_value: 100
+    restore_value: true
+    set_action:
+      - lambda: |-
+          id(empty_distance).publish_state(x);
+          id(empty_calibration_completed) = true;
+          ESP_LOGI("calibration", "Empty calibration captured: %.1f cm", x);
+
+          if (!id(full_calibration_completed)) {
+            ESP_LOGW("calibration", "Calibration rejected: Full calibration is incomplete");
+          } else {
+            const float full = id(full_distance).state;
+            if (full >= x) {
+              ESP_LOGW("calibration", "Calibration rejected: Full Distance must be less than Empty Distance");
+            } else if ((x - full) < ${minimum_calibration_span_cm}) {
+              ESP_LOGW("calibration", "Calibration rejected: span must be at least 10.0 cm");
+            }
+          }
+      - script.execute: evaluate_state
+
+  - platform: template
+    name: "Low Salt Threshold"
+    id: low_salt_threshold
+    entity_category: config
+    unit_of_measurement: "%"
+    mode: box
+    min_value: 5
+    max_value: 50
+    step: 1
+    initial_value: 20
+    restore_value: true
+    set_action:
+      - lambda: |-
+          id(low_salt_threshold).publish_state(x);
+      - script.execute: evaluate_state
+
+button:
+  - platform: template
+    name: "Set Current Distance as Full"
+    id: set_current_distance_as_full
+    entity_category: config
+    on_press:
+      - if:
+          condition:
+            lambda: |-
+              return id(has_valid_measurement) &&
+                     id(distance_to_salt).has_state() &&
+                     std::isfinite(id(distance_to_salt).state) &&
+                     id(sensor_fault).has_state() &&
+                     !id(sensor_fault).state;
+          then:
+            - lambda: |-
+                ESP_LOGI("calibration", "Set Current Distance as Full accepted at %.1f cm",
+                         id(distance_to_salt).state);
+            - number.set:
+                id: full_distance
+                value: !lambda return id(distance_to_salt).state;
+          else:
+            - logger.log:
+                level: WARN
+                tag: calibration
+                format: "Set Current Distance as Full rejected: no valid filtered distance"
+
+  - platform: template
+    name: "Set Current Distance as Empty"
+    id: set_current_distance_as_empty
+    entity_category: config
+    on_press:
+      - if:
+          condition:
+            lambda: |-
+              return id(has_valid_measurement) &&
+                     id(distance_to_salt).has_state() &&
+                     std::isfinite(id(distance_to_salt).state) &&
+                     id(sensor_fault).has_state() &&
+                     !id(sensor_fault).state;
+          then:
+            - lambda: |-
+                ESP_LOGI("calibration", "Set Current Distance as Empty accepted at %.1f cm",
+                         id(distance_to_salt).state);
+            - number.set:
+                id: empty_distance
+                value: !lambda return id(distance_to_salt).state;
+          else:
+            - logger.log:
+                level: WARN
+                tag: calibration
+                format: "Set Current Distance as Empty rejected: no valid filtered distance"
+
+sensor:
+  # Internal raw/filter path. Invalid samples are rejected before the median.
+  # The timeout is deliberately last, so its NaN reaches on_value unchanged.
+  - platform: vl53l0x
+    id: tof_distance
+    address: 0x29
+    update_interval: 30s
+    long_range: true
+    internal: true
+    filters:
+      - multiply: 100.0
+      - lambda: |-
+          if (!std::isfinite(x) || x < ${sensor_min_cm} || x > ${sensor_max_cm}) {
+            if (id(consecutive_invalid_readings) < 1000) {
+              id(consecutive_invalid_readings) += 1;
+            }
+            return {};
+          }
+
+          const bool first_valid = !id(has_valid_measurement);
+          id(has_valid_measurement) = true;
+          id(last_valid_measurement_ms) = millis();
+          id(consecutive_invalid_readings) = 0;
+          if (first_valid) {
+            ESP_LOGI("sensor", "First valid distance: %.1f cm", x);
+          }
+          return x;
+      - median:
+          window_size: 5
+          send_every: 1
+          send_first_at: 1
+      - timeout:
+          timeout: 180s
+          value: !lambda return NAN;
+    on_value:
+      then:
+        - lambda: |-
+            if (std::isfinite(x)) {
+              id(distance_to_salt).publish_state(x);
+            } else {
+              id(distance_to_salt).publish_state(NAN);
+            }
+        - script.execute: evaluate_state
+
+  - platform: template
+    name: "Distance to Salt"
+    id: distance_to_salt
+    unit_of_measurement: "cm"
+    device_class: distance
+    state_class: measurement
+    accuracy_decimals: 1
+    update_interval: never
+
+  - platform: template
+    name: "Salt Level"
+    id: salt_level
+    unit_of_measurement: "%"
+    state_class: measurement
+    accuracy_decimals: 1
+    update_interval: never
+
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    id: wifi_signal_db
+    entity_category: diagnostic
+    update_interval: 60s
+
+binary_sensor:
+  - platform: template
+    name: "Low Salt"
+    id: low_salt
+    device_class: problem
+
+  - platform: template
+    name: "Sensor Fault"
+    id: sensor_fault
+    device_class: problem
+
+  - platform: template
+    name: "Calibration Required"
+    id: calibration_required
+    device_class: problem
+
+text_sensor:
+  - platform: template
+    name: "Salt Status"
+    id: salt_status
+    update_interval: never
+
+interval:
+  # Covers repeated invalid readings and the no-valid-reading-at-boot gap in
+  # ESPHome's timeout filter, which only starts after its first input.
+  - interval: 5s
+    then:
+      - script.execute: evaluate_state
+
+  # ESPHome's VL53L0X driver cannot resume a transaction after power is removed
+  # mid-read. Reboot once, and only once, when an absent sensor reappears.
+  - interval: 30s
+    then:
+      - lambda: |-
+          if (!id(sensor_fault).has_state() || !id(sensor_fault).state) {
+            id(i2c_missing_observed) = false;
+            return;
+          }
+
+          uint8_t model_id = 0;
+          const bool present = id(tof_distance).read_byte(0xC0, &model_id) &&
+                               model_id == 0xEE;
+          if (!present) {
+            if (!id(i2c_missing_observed)) {
+              ESP_LOGE("sensor", "VL53L0X is unavailable on the I2C bus");
+            }
+            id(i2c_missing_observed) = true;
+            return;
+          }
+
+          if (id(i2c_missing_observed)) {
+            ESP_LOGI("sensor", "VL53L0X reappeared; rebooting once to reinitialize it");
+            App.safe_reboot();
+          }

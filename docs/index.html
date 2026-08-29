@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#102820">
+    <meta name="description" content="Install SaltWatch on an M5Stack ATOM Lite from your browser.">
+    <title>Install SaltWatch</title>
+    <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #15221d;
+        --muted: #5b6a64;
+        --paper: #f4f7f3;
+        --card: #ffffff;
+        --line: #d6ded9;
+        --salt: #fffdf4;
+        --green: #147052;
+        --green-dark: #0e503b;
+        --amber: #9a6514;
+        --esp-tools-button-color: var(--green);
+        --esp-tools-button-text-color: #ffffff;
+        --esp-tools-button-border-radius: 10px;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 10% 0%, #dbe9df 0, transparent 34rem),
+          linear-gradient(180deg, var(--paper), #edf2ef);
+        font: 16px/1.55 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      main {
+        width: min(760px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 56px 0 72px;
+      }
+
+      .eyebrow {
+        margin: 0 0 10px;
+        color: var(--green);
+        font-size: 0.78rem;
+        font-weight: 750;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2.4rem, 8vw, 4.8rem);
+        line-height: 0.98;
+        letter-spacing: -0.055em;
+      }
+
+      .lede {
+        max-width: 620px;
+        margin: 22px 0 34px;
+        color: var(--muted);
+        font-size: 1.12rem;
+      }
+
+      .card {
+        padding: clamp(22px, 5vw, 36px);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: color-mix(in srgb, var(--card) 94%, transparent);
+        box-shadow: 0 20px 60px rgba(19, 50, 38, 0.09);
+      }
+
+      .hardware {
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 24px;
+        padding: 7px 11px;
+        border-radius: 999px;
+        background: #e6f0e9;
+        color: var(--green-dark);
+        font-size: 0.86rem;
+        font-weight: 650;
+      }
+
+      h2 {
+        margin: 0 0 14px;
+        font-size: 1.28rem;
+        letter-spacing: -0.02em;
+      }
+
+      ol {
+        margin: 0 0 26px;
+        padding-left: 1.35rem;
+      }
+
+      li { margin: 9px 0; padding-left: 5px; }
+
+      esp-web-install-button {
+        display: block;
+        margin: 8px 0 16px;
+      }
+
+      esp-web-install-button button {
+        width: 100%;
+        padding: 14px 20px;
+        border: 0;
+        border-radius: 10px;
+        background: var(--green);
+        color: #fff;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 750;
+      }
+
+      .note {
+        margin: 22px 0 0;
+        padding: 16px 18px;
+        border-left: 4px solid var(--amber);
+        border-radius: 8px;
+        background: var(--salt);
+        color: #5f471e;
+      }
+
+      .note strong { color: #412f12; }
+
+      footer {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 22px;
+        margin-top: 26px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      a { color: var(--green-dark); text-underline-offset: 3px; }
+      code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+      @media (max-width: 520px) {
+        main { padding-top: 34px; }
+        .lede { font-size: 1rem; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">ESPHome · Salt monitor</p>
+      <h1>Install SaltWatch</h1>
+      <p class="lede">Flash the M5Stack ATOM Lite over USB, then enter Wi-Fi credentials in the same browser flow. No local ESPHome installation is needed for the first flash.</p>
+
+      <section class="card" aria-labelledby="install-title">
+        <div class="hardware">M5Stack ATOM Lite C008 · ESP32</div>
+        <h2 id="install-title">Before you connect</h2>
+        <ol>
+          <li>Use desktop Chrome or Microsoft Edge and a USB-A-to-USB-C <strong>data</strong> cable.</li>
+          <li>Connect the ATOM Lite directly to the computer.</li>
+          <li>Click install, select its serial port, and approve erasing the device.</li>
+          <li>When prompted, enter the 2.4 GHz Wi-Fi network and password.</li>
+        </ol>
+
+        <esp-web-install-button manifest="manifest.json">
+          <button slot="activate">Connect and install SaltWatch</button>
+          <span slot="unsupported">This browser cannot use Web Serial. Open this page in desktop Chrome or Microsoft Edge.</span>
+          <span slot="not-allowed">Web Serial access is blocked. Reload this HTTPS page and allow serial access.</span>
+        </esp-web-install-button>
+
+        <p class="note"><strong>Security hand-off:</strong> the bootstrap contains no credentials and is temporarily unencrypted. Use it on a trusted network, immediately adopt SaltWatch in ESPHome Device Builder, add an OTA password as described in the instructions, and install the adopted configuration.</p>
+      </section>
+
+      <footer>
+        <span>Installer firmware 1.1.0</span>
+        <a href="https://github.com/thomasgregg/saltwatch">Source and full instructions</a>
+        <a href="https://github.com/thomasgregg/saltwatch/blob/main/README.md#web-installer">Adoption steps</a>
+      </footer>
+    </main>
+  </body>
+</html>
