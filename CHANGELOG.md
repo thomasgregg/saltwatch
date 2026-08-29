@@ -19,6 +19,7 @@ All notable changes to SaltWatch are documented here.
 - Reduced that disclosure to a subtle **Security and additional help** link,
   relying on ESP Web Tools for generic serial-port troubleshooting and keeping
   only SaltWatch-specific security and documentation guidance.
+- Added a flat Contents section to the README for faster navigation.
 
 ## 1.2.0 - 2026-08-29
 

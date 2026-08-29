@@ -14,6 +14,19 @@ calibration obvious instead of leaving a stale value in Home Assistant.
 
 Version **1.3.0** · ESPHome project **`saltwatch.salt-monitor`**
 
+## Contents
+
+- [Why SaltWatch](#why-saltwatch)
+- [Hardware](#hardware)
+- [Quick start](#quick-start)
+- [Calibration](#calibration)
+- [Home Assistant entities](#home-assistant-entities)
+- [Trustworthy failure behavior](#trustworthy-failure-behavior)
+- [Local web interface and updates](#local-web-interface-and-updates)
+- [Documentation](#documentation)
+- [Supported hardware and firmware](#supported-hardware-and-firmware)
+- [License](#license)
+
 ## Why SaltWatch
 
 A softener can keep running after the salt is nearly gone, and a failed sensor
