@@ -156,10 +156,13 @@
         <h2 id="install-title">Before you connect</h2>
         <ol>
           <li>Use desktop Chrome or Microsoft Edge and a USB-A-to-USB-C <strong>data</strong> cable.</li>
-          <li>Connect the ATOM Lite directly to the computer.</li>
-          <li>Click install, select its serial port, and approve erasing the device.</li>
+          <li>Close ESPHome, serial monitors, and any other program using the device's serial port.</li>
+          <li>Connect the ATOM Lite directly to the computer. The C008 automatically enters download/programming mode over USB; no button combination is normally required.</li>
+          <li>Click install, select the port named <strong>M5Stack</strong>, <strong>USB Serial</strong>, or similar, and approve erasing the device.</li>
           <li>When prompted, enter the 2.4 GHz Wi-Fi network and password.</li>
         </ol>
+
+        <p class="note"><strong>No serial port?</strong> Unplug and reconnect the ATOM Lite, try another known-good data cable or direct USB port, and reload this page. If it is still absent, install the FTDI VCP driver linked in M5Stack's <a href="https://docs.m5stack.com/en/uiflow2/atomlite/program">official ATOM Lite programming instructions</a>.</p>
 
         <esp-web-install-button manifest="manifest.json">
           <button slot="activate">Connect and install SaltWatch</button>

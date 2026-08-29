@@ -107,17 +107,25 @@ Requirements: a desktop version of Chrome or Microsoft Edge, the ATOM Lite,
 and a USB-A-to-USB-C **data** cable. Safari and Firefox do not currently expose
 the required Web Serial interface.
 
-1. Connect the ATOM Lite to the computer with the USB data cable.
-2. Open the installer link, select **Connect and install**, and choose the ATOM
+1. Close serial monitors, ESPHome upload sessions, M5Burner, and any other
+   program that may be using the serial port.
+2. Connect the ATOM Lite directly to the computer with the USB data cable. The
+   C008 automatically enters download/programming mode when connected over
+   USB; no button combination is normally required.
+3. If the browser shows no serial port, unplug and reconnect the ATOM Lite, try
+   another known-good data cable or direct USB port, and reload the page. If it
+   is still absent, install the FTDI VCP driver from M5Stack's
+   [official ATOM Lite programming instructions](https://docs.m5stack.com/en/uiflow2/atomlite/program).
+4. Open the installer link, select **Connect and install**, and choose the ATOM
    Lite serial port.
-3. Approve erasing the device when prompted, then install SaltWatch.
-4. Enter the 2.4 GHz Wi-Fi credentials in the provisioning dialog. The ATOM
+5. Approve erasing the device when prompted, then install SaltWatch.
+6. Enter the 2.4 GHz Wi-Fi credentials in the provisioning dialog. The ATOM
    Lite cannot join a 5 GHz-only network.
-5. Open ESPHome Device Builder in Home Assistant. SaltWatch should appear as
+7. Open ESPHome Device Builder in Home Assistant. SaltWatch should appear as
    available to **Adopt** because the bootstrap advertises the official project
    configuration. Adopt it. Device Builder generates a unique API encryption
    key in the adopted YAML.
-6. Before the first wireless update, add `ota_password`,
+8. Before the first wireless update, add `ota_password`,
    `web_server_username`, and `web_server_password` to the Device Builder
    `secrets.yaml`, then add these blocks to the adopted SaltWatch YAML:
 
@@ -141,19 +149,19 @@ the required Web Serial interface.
        id: saltwatch_web_ota
    ```
 
-7. Confirm the adopted YAML contains `api:` → `encryption:` → `key:`. Choose
+9. Confirm the adopted YAML contains `api:` → `encryption:` → `key:`. Choose
    **Install → Wirelessly**. This replaces the bootstrap with the adopted,
    encrypted configuration and enables both protected update methods.
-8. Add the discovered SaltWatch ESPHome device under **Settings → Devices &
+10. Add the discovered SaltWatch ESPHome device under **Settings → Devices &
    services** in Home Assistant, using the API encryption key if prompted.
-9. Open `http://<device-name>.local/` or the device IP address and sign in with
+11. Open `http://<device-name>.local/` or the device IP address and sign in with
    the web username and password from `secrets.yaml`.
 
 The public bootstrap image contains no Wi-Fi password, API encryption key, or
 OTA password. It advertises encryption support, but communication is not
 encrypted until Device Builder installs the generated key; OTA is initially
 passwordless so that first adopted build can be installed. Perform the setup on
-a trusted local network, adopt it immediately, and complete step 7. The
+a trusted local network, adopt it immediately, and complete step 9. The
 bootstrap intentionally has no on-device web UI because a public factory image
 cannot contain private login credentials. The protected UI appears after the
 adopted production configuration is installed. The hosted installer itself is

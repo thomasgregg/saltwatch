@@ -9,6 +9,8 @@ All notable changes to SaltWatch are documented here.
   retaining password-protected native ESPHome OTA.
 - Embedded the web UI assets so the local interface does not depend on internet
   access, and disabled browser log streaming to reduce exposure and overhead.
+- Added C008 programming-mode and USB serial troubleshooting instructions to
+  the hosted installer and README.
 - Kept automatic HTTP update checks and remote firmware downloads disabled.
 
 ## 1.1.0 - 2026-08-29
