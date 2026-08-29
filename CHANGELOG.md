@@ -2,6 +2,10 @@
 
 All notable changes to SaltWatch are documented here.
 
+## Unreleased
+
+- Added a dedicated SaltWatch favicon to the browser installer.
+
 ## 1.5.0 - 2026-08-29
 
 - Moved Estimated Days Until Low Salt from a manually installed Home Assistant

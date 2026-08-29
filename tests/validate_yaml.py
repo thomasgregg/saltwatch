@@ -29,6 +29,12 @@ def load_yaml(path: str):
 
 
 def run() -> None:
+    installer_html = Path("docs/index.html").read_text()
+    assert '<link rel="icon" type="image/svg+xml" href="favicon.svg">' in (
+        installer_html
+    )
+    assert Path("docs/favicon.svg").exists()
+
     # Forecasting is device-native; end users must not need a legacy package.
     assert not Path("home-assistant/saltwatch-prediction.yaml").exists()
     assert not Path("docs/home-assistant.md").exists()
