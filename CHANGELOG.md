@@ -2,6 +2,26 @@
 
 All notable changes to SaltWatch are documented here.
 
+## 1.4.0 - 2026-08-29
+
+- Fixed recovery when the VL53L0X is disconnected and reconnected before the
+  fault timeout by allowing one guarded recovery reboot for a present but
+  stalled sensor.
+- Added a persistent reboot-loop guard that is cleared by a valid measurement
+  or a newly observed physical sensor disconnection.
+- Normalized calibration comparisons to 0.1 cm units so an exact displayed
+  10.0 cm span is always accepted.
+- Normalized low-salt and hysteresis comparisons to the displayed 0.1% value so
+  equality behaves consistently.
+- Replaced the 32-bit startup timer with ESP-IDF's 64-bit monotonic timer.
+- Added Calibration Details and Last Valid Measurement Age diagnostics.
+- Added an optional Recorder-backed Home Assistant estimate for days until the
+  configured low-salt threshold.
+- Added an optional Home Assistant notification blueprint for low salt, sensor
+  faults, calibration problems, forecast warnings, and recovery.
+- Added table-driven regression checks for calibration, percentage, threshold,
+  hysteresis, status priority, forecast availability, and timer behavior.
+
 ## 1.3.0 - 2026-08-29
 
 - Removed the web-interface username and password at the owner's request.

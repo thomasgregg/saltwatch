@@ -13,6 +13,8 @@ build/
 # Local environments and tooling
 .venv/
 venv/
+__pycache__/
+*.py[cod]
 .env
 .DS_Store
 .idea/

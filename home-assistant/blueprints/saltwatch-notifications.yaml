@@ -1,0 +1,237 @@
+blueprint:
+  name: SaltWatch problem and refill notifications
+  description: >-
+    Sends clear notifications for low salt, sensor faults, invalid calibration,
+    and an optional predicted-days warning. Recovery notifications can also be
+    enabled. Select the SaltWatch entities if their IDs differ from the defaults.
+  domain: automation
+  author: SaltWatch
+  homeassistant:
+    min_version: 2024.10.0
+  input:
+    notification_target:
+      name: Notification target
+      description: Phone or other Home Assistant notify entity.
+      selector:
+        entity:
+          filter:
+            domain: notify
+    low_salt_entity:
+      name: Low Salt
+      default: binary_sensor.saltwatch_low_salt
+      selector:
+        entity:
+          filter:
+            domain: binary_sensor
+            device_class: problem
+    sensor_fault_entity:
+      name: Sensor Fault
+      default: binary_sensor.saltwatch_sensor_fault
+      selector:
+        entity:
+          filter:
+            domain: binary_sensor
+            device_class: problem
+    calibration_required_entity:
+      name: Calibration Required
+      default: binary_sensor.saltwatch_calibration_required
+      selector:
+        entity:
+          filter:
+            domain: binary_sensor
+            device_class: problem
+    salt_level_entity:
+      name: Salt Level
+      default: sensor.saltwatch_salt_level
+      selector:
+        entity:
+          filter:
+            domain: sensor
+    calibration_details_entity:
+      name: Calibration Details
+      default: text_sensor.saltwatch_calibration_details
+      selector:
+        entity:
+          filter:
+            domain: text_sensor
+    forecast_entity:
+      name: Estimated Days Until Low Salt
+      description: Install the optional prediction package to use this warning.
+      default: sensor.saltwatch_estimated_days_until_low_salt
+      selector:
+        entity:
+          filter:
+            domain: sensor
+    forecast_notice_days:
+      name: Forecast warning
+      description: Notify once when the estimate crosses this many days.
+      default: 7
+      selector:
+        number:
+          min: 1
+          max: 30
+          step: 1
+          unit_of_measurement: days
+          mode: box
+    problem_delay:
+      name: Problem confirmation time
+      description: Prevents notifications for very brief state changes.
+      default:
+        minutes: 2
+      selector:
+        duration:
+    send_recovery_notifications:
+      name: Send recovery notifications
+      default: true
+      selector:
+        boolean:
+
+variables:
+  low_salt_entity: !input low_salt_entity
+  sensor_fault_entity: !input sensor_fault_entity
+  calibration_required_entity: !input calibration_required_entity
+  salt_level_entity: !input salt_level_entity
+  calibration_details_entity: !input calibration_details_entity
+  forecast_notice_days: !input forecast_notice_days
+  send_recovery_notifications: !input send_recovery_notifications
+
+triggers:
+  - trigger: state
+    id: low_salt
+    entity_id: !input low_salt_entity
+    to: "on"
+    for: !input problem_delay
+  - trigger: state
+    id: sensor_fault
+    entity_id: !input sensor_fault_entity
+    to: "on"
+    for: !input problem_delay
+  - trigger: state
+    id: calibration_required
+    entity_id: !input calibration_required_entity
+    to: "on"
+    for: !input problem_delay
+  - trigger: state
+    id: forecast
+    entity_id: !input forecast_entity
+  - trigger: state
+    id: low_salt_recovered
+    entity_id: !input low_salt_entity
+    from: "on"
+    to: "off"
+  - trigger: state
+    id: sensor_fault_recovered
+    entity_id: !input sensor_fault_entity
+    from: "on"
+    to: "off"
+  - trigger: state
+    id: calibration_recovered
+    entity_id: !input calibration_required_entity
+    from: "on"
+    to: "off"
+
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: low_salt
+        sequence:
+          - action: notify.send_message
+            target:
+              entity_id: !input notification_target
+            data:
+              title: "SaltWatch: refill salt"
+              message: >-
+                Salt is at {{ states(salt_level_entity) }}%. Refill the
+                water-softener brine tank.
+      - conditions:
+          - condition: trigger
+            id: sensor_fault
+        sequence:
+          - action: notify.send_message
+            target:
+              entity_id: !input notification_target
+            data:
+              title: "SaltWatch: sensor fault"
+              message: >-
+                SaltWatch is not receiving a trustworthy distance. Check the
+                ToF sensor, Grove cable, salt dust, condensation, and target range.
+      - conditions:
+          - condition: trigger
+            id: calibration_required
+        sequence:
+          - action: notify.send_message
+            target:
+              entity_id: !input notification_target
+            data:
+              title: "SaltWatch: calibration required"
+              message: >-
+                {{ states(calibration_details_entity) }}. Salt Level remains
+                unavailable until calibration is valid.
+      - conditions:
+          - condition: trigger
+            id: forecast
+          - condition: template
+            value_template: >-
+              {% set new = trigger.to_state.state if trigger.to_state else none %}
+              {% set old = trigger.from_state.state if trigger.from_state else none %}
+              {{ is_number(new) and new | float > 0 and
+                 new | float <= forecast_notice_days | float and
+                 (not is_number(old) or old | float > forecast_notice_days | float) }}
+        sequence:
+          - action: notify.send_message
+            target:
+              entity_id: !input notification_target
+            data:
+              title: "SaltWatch: salt may run low soon"
+              message: >-
+                Based on the recent trend, SaltWatch estimates about
+                {{ trigger.to_state.state }} days until the configured low-salt
+                threshold. This is an estimate; check the tank before relying on it.
+      - conditions:
+          - condition: trigger
+            id: low_salt_recovered
+          - condition: template
+            value_template: >-
+              {{ send_recovery_notifications and
+                 is_state(sensor_fault_entity, 'off') and
+                 is_state(calibration_required_entity, 'off') and
+                 is_number(states(salt_level_entity)) }}
+        sequence:
+          - action: notify.send_message
+            target:
+              entity_id: !input notification_target
+            data:
+              title: "SaltWatch: condition cleared"
+              message: >-
+                The low-salt warning has cleared. Salt Level is
+                {{ states(salt_level_entity) }}%.
+      - conditions:
+          - condition: trigger
+            id: sensor_fault_recovered
+          - condition: template
+            value_template: "{{ send_recovery_notifications }}"
+        sequence:
+          - action: notify.send_message
+            target:
+              entity_id: !input notification_target
+            data:
+              title: "SaltWatch: sensor recovered"
+              message: "Valid distance measurements have resumed."
+      - conditions:
+          - condition: trigger
+            id: calibration_recovered
+          - condition: template
+            value_template: >-
+              {{ send_recovery_notifications and
+                 is_state(sensor_fault_entity, 'off') }}
+        sequence:
+          - action: notify.send_message
+            target:
+              entity_id: !input notification_target
+            data:
+              title: "SaltWatch: calibration valid"
+              message: "Calibration is valid and Salt Level is available."
+
+mode: queued
+max: 10

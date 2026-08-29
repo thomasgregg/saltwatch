@@ -1,5 +1,5 @@
 substitutions:
-  project_version: "1.3.0"
+  project_version: "1.4.0"
   sensor_min_cm: "5.0"
   sensor_max_cm: "120.0"
   minimum_calibration_span_cm: "10.0"
@@ -88,7 +88,7 @@ globals:
     initial_value: "false"
 
   - id: last_valid_measurement_ms
-    type: uint32_t
+    type: uint64_t
     restore_value: false
     initial_value: "0"
 
@@ -107,22 +107,38 @@ globals:
     restore_value: false
     initial_value: "false"
 
+  # Prevent a permanently blocked/present sensor from causing a reboot loop.
+  # A new valid measurement or a confirmed physical disconnect permits one
+  # future recovery reboot.
+  - id: sensor_recovery_reboot_attempted
+    type: bool
+    restore_value: true
+    initial_value: "false"
+
+  - id: sensor_recovery_reboot_requested
+    type: bool
+    restore_value: false
+    initial_value: "false"
+
 script:
   - id: evaluate_state
     mode: restart
     then:
       - lambda: |-
-          const uint32_t now = millis();
-          const uint32_t measurement_timeout = ${measurement_timeout_ms};
+          // ESP-IDF's 64-bit monotonic timer avoids the roughly 49-day wrap of
+          // millis(), including when the sensor has never produced a value.
+          const uint64_t now_ms =
+              static_cast<uint64_t>(esp_timer_get_time()) / 1000ULL;
+          const uint64_t measurement_timeout = ${measurement_timeout_ms}ULL;
 
           const bool initializing =
-              !id(has_valid_measurement) && now < measurement_timeout;
+              !id(has_valid_measurement) && now_ms < measurement_timeout;
 
           bool fault = false;
           if (!initializing) {
             if (!id(has_valid_measurement)) {
               fault = true;
-            } else if ((now - id(last_valid_measurement_ms)) >= measurement_timeout) {
+            } else if ((now_ms - id(last_valid_measurement_ms)) >= measurement_timeout) {
               fault = true;
             } else if (id(consecutive_invalid_readings) >= ${invalid_reading_limit}) {
               fault = true;
@@ -140,6 +156,14 @@ script:
           }
           id(sensor_fault).publish_state(fault);
 
+          if (id(has_valid_measurement)) {
+            const float age_seconds =
+                static_cast<float>(now_ms - id(last_valid_measurement_ms)) / 1000.0f;
+            id(last_valid_measurement_age).publish_state(age_seconds);
+          } else {
+            id(last_valid_measurement_age).publish_state(NAN);
+          }
+
           // Never leave a stale public distance visible while a fault is active.
           if (fault && id(distance_to_salt).has_state() &&
               std::isfinite(id(distance_to_salt).state)) {
@@ -148,14 +172,46 @@ script:
 
           const float full = id(full_distance).state;
           const float empty = id(empty_distance).state;
+          const bool full_finite = std::isfinite(full);
+          const bool empty_finite = std::isfinite(empty);
+          const int full_tenths = full_finite ? lroundf(full * 10.0f) : 0;
+          const int empty_tenths = empty_finite ? lroundf(empty * 10.0f) : 0;
+          const bool full_in_range =
+              full_finite && full_tenths >= 50 && full_tenths <= 1200;
+          const bool empty_in_range =
+              empty_finite && empty_tenths >= 50 && empty_tenths <= 1200;
+          const int span_tenths = empty_tenths - full_tenths;
           const bool calibration_valid =
               id(full_calibration_completed) &&
               id(empty_calibration_completed) &&
-              std::isfinite(full) && std::isfinite(empty) &&
-              full >= ${sensor_min_cm} && full <= ${sensor_max_cm} &&
-              empty >= ${sensor_min_cm} && empty <= ${sensor_max_cm} &&
-              full < empty &&
-              (empty - full) >= ${minimum_calibration_span_cm};
+              full_in_range && empty_in_range &&
+              full_tenths < empty_tenths &&
+              span_tenths >= 100;
+
+          std::string calibration_message;
+          if (!id(full_calibration_completed) &&
+              !id(empty_calibration_completed)) {
+            calibration_message = "Full and empty calibration required";
+          } else if (!id(full_calibration_completed)) {
+            calibration_message = "Full calibration required";
+          } else if (!id(empty_calibration_completed)) {
+            calibration_message = "Empty calibration required";
+          } else if (!full_in_range) {
+            calibration_message = "Full Distance must be between 5.0 and 120.0 cm";
+          } else if (!empty_in_range) {
+            calibration_message = "Empty Distance must be between 5.0 and 120.0 cm";
+          } else if (full_tenths >= empty_tenths) {
+            calibration_message = "Full Distance must be less than Empty Distance";
+          } else if (span_tenths < 100) {
+            calibration_message = "Calibration span must be at least 10.0 cm";
+          } else {
+            calibration_message = "Valid";
+          }
+
+          if (!id(calibration_details).has_state() ||
+              id(calibration_details).state != calibration_message) {
+            id(calibration_details).publish_state(calibration_message);
+          }
 
           if (calibration_valid != id(calibration_was_valid)) {
             if (calibration_valid) {
@@ -173,24 +229,30 @@ script:
           const float distance = id(distance_to_salt).state;
           if (!fault && calibration_valid &&
               id(distance_to_salt).has_state() && std::isfinite(distance)) {
-            const float span = empty - full;
-            if (span >= ${minimum_calibration_span_cm}) {
-              salt_percent = ((empty - distance) / span) * 100.0f;
-              salt_percent = std::max(0.0f, std::min(100.0f, salt_percent));
-            }
+            const float canonical_full = static_cast<float>(full_tenths) / 10.0f;
+            const float canonical_empty = static_cast<float>(empty_tenths) / 10.0f;
+            const float span = canonical_empty - canonical_full;
+            salt_percent = ((canonical_empty - distance) / span) * 100.0f;
+            salt_percent = std::max(0.0f, std::min(100.0f, salt_percent));
+            // Compare the same tenth-percent value that Home Assistant shows.
+            salt_percent = static_cast<float>(lroundf(salt_percent * 10.0f)) / 10.0f;
           }
           id(salt_level).publish_state(salt_percent);
 
           bool low = false;
           if (!fault && calibration_valid && std::isfinite(salt_percent)) {
-            const float threshold = id(low_salt_threshold).state;
+            const int salt_tenths = lroundf(salt_percent * 10.0f);
+            const int threshold_tenths =
+                lroundf(id(low_salt_threshold).state * 10.0f);
+            const int hysteresis_tenths =
+                lroundf(${low_salt_hysteresis_percent} * 10.0f);
             const bool was_low = id(low_salt).has_state() && id(low_salt).state;
             if (was_low) {
               // Equality stays low; clear only above threshold + five points.
-              low = salt_percent <= (threshold + ${low_salt_hysteresis_percent});
+              low = salt_tenths <= (threshold_tenths + hysteresis_tenths);
             } else {
               // Equality counts as low.
-              low = salt_percent <= threshold;
+              low = salt_tenths <= threshold_tenths;
             }
           }
 
@@ -237,17 +299,19 @@ number:
     restore_value: true
     set_action:
       - lambda: |-
-          id(full_distance).publish_state(x);
+          const float canonical = roundf(x * 10.0f) / 10.0f;
+          id(full_distance).publish_state(canonical);
           id(full_calibration_completed) = true;
-          ESP_LOGI("calibration", "Full calibration captured: %.1f cm", x);
+          ESP_LOGI("calibration", "Full calibration captured: %.1f cm", canonical);
 
           if (!id(empty_calibration_completed)) {
             ESP_LOGW("calibration", "Calibration rejected: Empty calibration is incomplete");
           } else {
-            const float empty = id(empty_distance).state;
-            if (x >= empty) {
+            const int full_tenths = lroundf(canonical * 10.0f);
+            const int empty_tenths = lroundf(id(empty_distance).state * 10.0f);
+            if (full_tenths >= empty_tenths) {
               ESP_LOGW("calibration", "Calibration rejected: Full Distance must be less than Empty Distance");
-            } else if ((empty - x) < ${minimum_calibration_span_cm}) {
+            } else if ((empty_tenths - full_tenths) < 100) {
               ESP_LOGW("calibration", "Calibration rejected: span must be at least 10.0 cm");
             }
           }
@@ -267,17 +331,19 @@ number:
     restore_value: true
     set_action:
       - lambda: |-
-          id(empty_distance).publish_state(x);
+          const float canonical = roundf(x * 10.0f) / 10.0f;
+          id(empty_distance).publish_state(canonical);
           id(empty_calibration_completed) = true;
-          ESP_LOGI("calibration", "Empty calibration captured: %.1f cm", x);
+          ESP_LOGI("calibration", "Empty calibration captured: %.1f cm", canonical);
 
           if (!id(full_calibration_completed)) {
             ESP_LOGW("calibration", "Calibration rejected: Full calibration is incomplete");
           } else {
-            const float full = id(full_distance).state;
-            if (full >= x) {
+            const int full_tenths = lroundf(id(full_distance).state * 10.0f);
+            const int empty_tenths = lroundf(canonical * 10.0f);
+            if (full_tenths >= empty_tenths) {
               ESP_LOGW("calibration", "Calibration rejected: Full Distance must be less than Empty Distance");
-            } else if ((x - full) < ${minimum_calibration_span_cm}) {
+            } else if ((empty_tenths - full_tenths) < 100) {
               ESP_LOGW("calibration", "Calibration rejected: span must be at least 10.0 cm");
             }
           }
@@ -373,8 +439,11 @@ sensor:
 
           const bool first_valid = !id(has_valid_measurement);
           id(has_valid_measurement) = true;
-          id(last_valid_measurement_ms) = millis();
+          id(last_valid_measurement_ms) =
+              static_cast<uint64_t>(esp_timer_get_time()) / 1000ULL;
           id(consecutive_invalid_readings) = 0;
+          id(sensor_recovery_reboot_attempted) = false;
+          id(i2c_missing_observed) = false;
           if (first_valid) {
             ESP_LOGI("sensor", "First valid distance: %.1f cm", x);
           }
@@ -419,6 +488,17 @@ sensor:
     entity_category: diagnostic
     update_interval: 60s
 
+  - platform: template
+    name: "Last Valid Measurement Age"
+    id: last_valid_measurement_age
+    entity_category: diagnostic
+    disabled_by_default: true
+    unit_of_measurement: "s"
+    device_class: duration
+    state_class: measurement
+    accuracy_decimals: 0
+    update_interval: never
+
 binary_sensor:
   - platform: template
     name: "Low Salt"
@@ -441,6 +521,12 @@ text_sensor:
     id: salt_status
     update_interval: never
 
+  - platform: template
+    name: "Calibration Details"
+    id: calibration_details
+    entity_category: diagnostic
+    update_interval: never
+
 interval:
   # Covers repeated invalid readings and the no-valid-reading-at-boot gap in
   # ESPHome's timeout filter, which only starts after its first input.
@@ -448,13 +534,14 @@ interval:
     then:
       - script.execute: evaluate_state
 
-  # ESPHome's VL53L0X driver cannot resume a transaction after power is removed
-  # mid-read. Reboot once, and only once, when an absent sensor reappears.
+  # ESPHome's VL53L0X driver cannot always resume after power is removed during
+  # a transaction. Probe while faulted and permit one recovery reboot whether
+  # the disconnect was observed or the sensor is already present again.
   - interval: 30s
     then:
       - lambda: |-
+          id(sensor_recovery_reboot_requested) = false;
           if (!id(sensor_fault).has_state() || !id(sensor_fault).state) {
-            id(i2c_missing_observed) = false;
             return;
           }
 
@@ -466,10 +553,27 @@ interval:
               ESP_LOGE("sensor", "VL53L0X is unavailable on the I2C bus");
             }
             id(i2c_missing_observed) = true;
+            // A physical power cycle is a new recovery opportunity.
+            id(sensor_recovery_reboot_attempted) = false;
             return;
           }
 
-          if (id(i2c_missing_observed)) {
-            ESP_LOGI("sensor", "VL53L0X reappeared; rebooting once to reinitialize it");
-            App.safe_reboot();
+          const bool reappeared = id(i2c_missing_observed);
+          id(i2c_missing_observed) = false;
+          if (!id(sensor_recovery_reboot_attempted)) {
+            id(sensor_recovery_reboot_attempted) = true;
+            id(sensor_recovery_reboot_requested) = true;
+            if (reappeared) {
+              ESP_LOGI("sensor", "VL53L0X reappeared; rebooting once to reinitialize it");
+            } else {
+              ESP_LOGW("sensor", "VL53L0X is present but readings have stalled; rebooting once to recover it");
+            }
           }
+      - if:
+          condition:
+            lambda: return id(sensor_recovery_reboot_requested);
+          then:
+            # Allow the persistent one-shot guard to be written before reboot.
+            - delay: 2s
+            - lambda: |-
+                App.safe_reboot();

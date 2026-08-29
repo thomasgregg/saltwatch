@@ -13,6 +13,9 @@
 | `docs/index.html` | ESP Web Tools installer page. |
 | `docs/manifest.json` | Versioned ESP Web Tools manifest. |
 | `docs/*.factory.bin` | Published versioned browser-installer factory images. |
+| `home-assistant/saltwatch-prediction.yaml` | Optional Recorder-backed forecast package. |
+| `home-assistant/blueprints/` | Optional SaltWatch notification blueprint. |
+| `tests/` | Small logic, Home Assistant YAML, and release-metadata regression checks. |
 | `.github/workflows/esphome.yml` | Clean configuration and compile validation. |
 | `CHANGELOG.md` | Release history. |
 | `LICENSE` | MIT license. |
@@ -46,7 +49,7 @@ web interface intentionally do not have credentials.
 
 ## ESPHome version
 
-SaltWatch 1.3.0 is validated with:
+SaltWatch 1.4.0 is validated with:
 
 - ESPHome 2026.8.1
 - ESP-IDF 5.5.5
@@ -70,6 +73,8 @@ esphome config saltwatch.yaml
 esphome compile saltwatch.yaml
 esphome config saltwatch-webinstall.yaml
 esphome compile saltwatch-webinstall.yaml
+python3 tests/test_logic.py
+python3 tests/validate_yaml.py
 ```
 
 The production build creates:
@@ -101,17 +106,17 @@ rg -n "web_server|reboot_timeout|api:|ota:|password:" \
 The published browser image is scanned for validation credentials, checked for
 the ESP32 image header, and hashed before and after GitHub Pages deployment.
 
-## Current v1.3.0 build results
+## Current v1.4.0 build results
 
 | Build | RAM | Application flash | Result |
 | --- | ---: | ---: | --- |
-| Production | 26.0% | 48.0% | Passed |
-| Browser installer | 26.1% | 48.6% | Passed |
+| Production | 26.1% | 48.1% | Passed |
+| Browser installer | 26.2% | 48.7% | Passed |
 
-The v1.3.0 hosted factory image is 957,168 bytes with SHA-256:
+The v1.4.0 hosted factory image is 958,928 bytes with SHA-256:
 
 ```text
-7d410384651c833c8683dc290535dfd5f6e040731a752e37cc2dbb00592d5462
+2a352944061fc034b1ab7114e0f7e43ab39422015e1bb960456267dc9cb755a7
 ```
 
 ## Configuration audit expectations
@@ -126,4 +131,3 @@ The v1.3.0 hosted factory image is 957,168 bytes with SHA-256:
 - no HTTP update checker or automatic remote download
 - no tracked `secrets.yaml`, build directory, compiled production firmware, or
   logs
-

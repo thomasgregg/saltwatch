@@ -14,6 +14,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Run logic regression checks
+        run: python3 tests/test_logic.py
+
+      - name: Validate Home Assistant YAML and release metadata
+        run: python3 tests/validate_yaml.py
+
       - name: Create validation-only secrets
         run: |
           cp secrets.yaml.example secrets.yaml

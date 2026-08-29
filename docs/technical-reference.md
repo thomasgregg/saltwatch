@@ -14,7 +14,7 @@ lambdas and watchdog scripts; it does not use a custom C++ component.
 | Node name | `saltwatch` |
 | Friendly name | `SaltWatch` |
 | ESPHome project | `saltwatch.salt-monitor` |
-| Release | 1.3.0 |
+| Release | 1.4.0 |
 | Board | `m5stack-atom` |
 | Framework | ESP-IDF |
 | I²C | SDA GPIO26, SCL GPIO32 |
@@ -65,10 +65,13 @@ When a fault activates:
 - Sensor Fault turns on; and
 - Salt Status becomes `Sensor Fault`.
 
-A valid reading clears the fault and recalculates all dependent entities. If
-the VL53L0X was physically absent and later reappears at `0x29`, SaltWatch
-performs one controlled reboot so the standard driver can initialize it.
-Calibration persists across that reboot.
+A valid reading clears the fault and recalculates all dependent entities. While
+faulted, SaltWatch probes the VL53L0X identity register. It permits one
+controlled recovery reboot both when a previously absent sensor reappears and
+when the sensor is already present but the standard driver has stalled. A
+persistent one-shot guard prevents a blocked or malfunctioning sensor from
+causing a reboot loop. The guard clears after a valid measurement or a newly
+observed physical disconnection. Calibration persists across recovery.
 
 ## Calibration persistence and validation
 
@@ -84,6 +87,8 @@ Manual number edits and successful capture-button actions set the corresponding
 flag. Button captures use the current filtered distance and reject the request
 during Sensor Fault or when distance is unavailable.
 
+Values are normalized to the displayed 0.1 cm resolution before comparison, so
+binary floating-point representation cannot reject a displayed 10.0 cm span.
 Calibration is valid only when:
 
 - both completion flags are true;
@@ -101,15 +106,19 @@ An invalid relationship is never silently corrected or swapped.
  (Empty Distance - Full Distance)
 ```
 
-The result is clamped to 0–100%. Salt Level publishes `NaN` whenever Sensor
-Fault is active, calibration is incomplete/invalid, or current distance is
-unavailable. Division is never attempted for a zero or invalid span.
+The result is clamped and rounded to its displayed 0.1% resolution. Salt Level
+publishes `NaN` whenever Sensor Fault is active, calibration is
+incomplete/invalid, or current distance is unavailable. Division is never
+attempted for a zero or invalid span.
 
 ## Low-salt logic
 
 Low Salt activates at or below Low Salt Threshold; equality counts as low.
 After activation it clears only above threshold plus five percentage points.
-This hysteresis prevents warning chatter near the threshold.
+Threshold comparisons use the same displayed tenth-percent value published to
+Home Assistant. Equality therefore behaves consistently despite binary
+floating-point representation. This hysteresis prevents warning chatter near
+the threshold.
 
 Low Salt is forced off whenever:
 
@@ -146,7 +155,9 @@ higher-priority problem is active.
 | Sensor Fault | Problem binary sensor | Raw-invalid, repeated-invalid, startup, timeout, range, and hardware checks. |
 | Calibration Required | Problem binary sensor | Persistent completion, range, order, and minimum-span checks. |
 | Salt Status | Text sensor | Derived priority state. |
+| Calibration Details | Diagnostic text sensor | Exact missing or invalid calibration reason, or `Valid`. |
 | WiFi Signal | Diagnostic sensor | Standard ESPHome Wi-Fi RSSI. |
+| Last Valid Measurement Age | Diagnostic sensor, s | Monotonic age of the most recent accepted raw reading; disabled by default to avoid unnecessary history. |
 
 ## Connectivity and resilience
 
@@ -163,12 +174,15 @@ higher-priority problem is active.
 
 ## Deliberately excluded
 
-SaltWatch does not implement automatic regeneration detection, last
-regeneration, overdue warnings, salt-consumption history, historical buffers,
-remaining-days predictions, usage trends, fast polling, MQTT, automatic HTTP
-update checks, remote firmware downloads, cloud services, RGB status behavior,
-a custom Home Assistant dashboard, notification automations, or tank-height
-configuration.
+The SaltWatch firmware does not implement automatic regeneration detection,
+last regeneration, overdue warnings, salt-consumption history, historical
+buffers, usage trends, fast polling, MQTT, automatic HTTP update checks, remote
+firmware downloads, cloud services, RGB status behavior, a custom Home
+Assistant dashboard, or tank-height configuration.
+
+An optional Home Assistant package provides a days-until-low estimate, and an
+optional blueprint provides notifications. They do not add history or
+forecasting state to the firmware and are not required for core operation.
 
 These may be considered later, but none is required for dependable measurement
 and explicit failure reporting.
@@ -181,8 +195,11 @@ and explicit failure reporting.
   Tank shape and brine voids make it an estimate rather than a mass measurement.
 - The five-value median intentionally delays complete response to a changed
   surface by approximately two to three minutes.
-- Reappearance of a previously absent I²C sensor requires one controlled reboot
-  to initialize the standard ESPHome driver.
+- Recovery from a stalled or reconnected I²C sensor may require one controlled
+  reboot to initialize the standard ESPHome driver.
+- The optional days-until-low value needs at least seven days of Home Assistant
+  Recorder history and a meaningful downward trend. It can be unavailable or
+  inaccurate around refills and changing water use.
 - Network access is equivalent to device administration because the web UI and
   OTA paths are passwordless.
 
@@ -194,4 +211,3 @@ and explicit failure reporting.
 - [ESPHome native OTA](https://esphome.io/components/ota/esphome/)
 - [ESPHome web server](https://esphome.io/components/web_server/)
 - [ESPHome web-server OTA](https://esphome.io/components/ota/web_server/)
-
