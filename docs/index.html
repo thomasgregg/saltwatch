@@ -116,16 +116,32 @@
         font-weight: 750;
       }
 
-      .note {
-        margin: 22px 0 0;
-        padding: 16px 18px;
-        border-left: 4px solid var(--amber);
-        border-radius: 8px;
-        background: var(--salt);
-        color: #5f471e;
+      .help {
+        margin-top: 18px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #fafcf9;
       }
 
-      .note strong { color: #412f12; }
+      .help summary {
+        padding: 14px 16px;
+        color: var(--green-dark);
+        cursor: pointer;
+        font-weight: 700;
+      }
+
+      .help[open] summary { border-bottom: 1px solid var(--line); }
+
+      .help-content { padding: 4px 16px 16px; }
+
+      .help-content h3 {
+        margin: 14px 0 4px;
+        font-size: 1rem;
+      }
+
+      .help-content p { margin: 0; color: var(--muted); }
+
+      .help-content .warning { color: #5f471e; }
 
       footer {
         display: flex;
@@ -162,21 +178,27 @@
           <li>When prompted, enter the 2.4 GHz Wi-Fi network and password.</li>
         </ol>
 
-        <p class="note"><strong>No serial port?</strong> Unplug and reconnect the ATOM Lite, try another known-good data cable or direct USB port, and reload this page. If it is still absent, install the FTDI VCP driver linked in M5Stack's <a href="https://docs.m5stack.com/en/uiflow2/atomlite/program">official ATOM Lite programming instructions</a>.</p>
-
         <esp-web-install-button manifest="manifest.json">
           <button slot="activate">Connect and install SaltWatch</button>
           <span slot="unsupported">This browser cannot use Web Serial. Open this page in desktop Chrome or Microsoft Edge.</span>
           <span slot="not-allowed">Web Serial access is blocked. Reload this HTTPS page and allow serial access.</span>
         </esp-web-install-button>
 
-        <p class="note"><strong>Local-network warning:</strong> SaltWatch's web interface and both firmware update methods intentionally have no password. Anyone who can reach the device can change its controls or replace its firmware. Keep it on a trusted network, never expose it to the internet, and adopt it in ESPHome Device Builder to enable encrypted Home Assistant API access.</p>
+        <details class="help">
+          <summary>Need help or troubleshooting?</summary>
+          <div class="help-content">
+            <h3>No serial port appears</h3>
+            <p>Unplug and reconnect the ATOM Lite, close software using its serial port, and try another known-good data cable or direct USB port. If it is still absent, install the FTDI VCP driver from M5Stack's <a href="https://docs.m5stack.com/en/uiflow2/atomlite/program">official programming instructions</a>.</p>
+            <h3>Local-network access</h3>
+            <p class="warning">The web interface and both firmware update methods intentionally have no password. Anyone who can reach SaltWatch can change its controls or replace its firmware. Keep it on a trusted network and never expose it to the internet.</p>
+          </div>
+        </details>
       </section>
 
       <footer>
         <span>Installer firmware 1.3.0</span>
         <a href="https://github.com/thomasgregg/saltwatch">Source and full instructions</a>
-        <a href="https://github.com/thomasgregg/saltwatch/blob/main/README.md#web-installer">Adoption steps</a>
+        <a href="https://github.com/thomasgregg/saltwatch/blob/main/docs/installation.md#adopt-in-esphome-device-builder">Adoption steps</a>
       </footer>
     </main>
   </body>

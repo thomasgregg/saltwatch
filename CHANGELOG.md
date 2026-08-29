@@ -11,6 +11,11 @@ All notable changes to SaltWatch are documented here.
   after Device Builder adoption without additional YAML edits.
 - Reduced required secrets to Wi-Fi credentials and the encrypted native API
   key, and added explicit trusted-LAN warnings for the open control/update paths.
+- Reworked the README into a concise, outcome-focused beginner guide and moved
+  installation, hardware, calibration, technical, and development detail into
+  dedicated documentation pages.
+- Consolidated installer troubleshooting and network notes into one collapsed
+  Help section so the primary install path stays visually clean.
 
 ## 1.2.0 - 2026-08-29
 
