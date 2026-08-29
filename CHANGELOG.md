@@ -16,6 +16,9 @@ All notable changes to SaltWatch are documented here.
   dedicated documentation pages.
 - Consolidated installer troubleshooting and network notes into one collapsed
   Help section so the primary install path stays visually clean.
+- Reduced that disclosure to a subtle **Security and additional help** link,
+  relying on ESP Web Tools for generic serial-port troubleshooting and keeping
+  only SaltWatch-specific security and documentation guidance.
 
 ## 1.2.0 - 2026-08-29
 

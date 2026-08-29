@@ -117,29 +117,34 @@
       }
 
       .help {
-        margin-top: 18px;
-        border: 1px solid var(--line);
-        border-radius: 10px;
-        background: #fafcf9;
+        margin-top: 14px;
+        color: var(--muted);
+        font-size: 0.9rem;
       }
 
       .help summary {
-        padding: 14px 16px;
-        color: var(--green-dark);
+        display: inline-block;
+        padding: 4px 0;
+        color: var(--muted);
         cursor: pointer;
-        font-weight: 700;
+        font-weight: 650;
       }
 
-      .help[open] summary { border-bottom: 1px solid var(--line); }
+      .help summary:hover { color: var(--green-dark); }
 
-      .help-content { padding: 4px 16px 16px; }
+      .help-content {
+        max-width: 600px;
+        margin-top: 8px;
+        padding-left: 14px;
+        border-left: 2px solid var(--line);
+      }
 
       .help-content h3 {
-        margin: 14px 0 4px;
-        font-size: 1rem;
+        margin: 10px 0 4px;
+        font-size: 0.9rem;
       }
 
-      .help-content p { margin: 0; color: var(--muted); }
+      .help-content p { margin: 0 0 10px; color: var(--muted); }
 
       .help-content .warning { color: #5f471e; }
 
@@ -185,12 +190,11 @@
         </esp-web-install-button>
 
         <details class="help">
-          <summary>Need help or troubleshooting?</summary>
+          <summary>Security and additional help</summary>
           <div class="help-content">
-            <h3>No serial port appears</h3>
-            <p>Unplug and reconnect the ATOM Lite, close software using its serial port, and try another known-good data cable or direct USB port. If it is still absent, install the FTDI VCP driver from M5Stack's <a href="https://docs.m5stack.com/en/uiflow2/atomlite/program">official programming instructions</a>.</p>
             <h3>Local-network access</h3>
             <p class="warning">The web interface and both firmware update methods intentionally have no password. Anyone who can reach SaltWatch can change its controls or replace its firmware. Keep it on a trusted network and never expose it to the internet.</p>
+            <p>ESP Web Tools provides connection help when no serial port is selected. For ATOM Lite-specific guidance, see the <a href="https://github.com/thomasgregg/saltwatch/blob/main/docs/installation.md#if-no-serial-port-appears">installation guide</a>.</p>
           </div>
         </details>
       </section>
