@@ -36,6 +36,12 @@ duplicate forecast notices. A return from `unavailable` inside the warning
 window can notify again; this is intentional so a sensor outage cannot silently
 hide a still-current refill warning.
 
+Home Assistant keeps the confirmation timer in memory. Restarting Home
+Assistant or reloading automations while that short timer is running cancels
+it; the notification then waits for the condition to leave and enter its
+trigger state again. This affects only optional notification delivery, not
+SaltWatch measurement, fault handling, or device-native forecasting.
+
 If direct import is unavailable, copy
 [`home-assistant/blueprints/saltwatch-notifications.yaml`](../home-assistant/blueprints/saltwatch-notifications.yaml)
 to `/config/blueprints/automation/saltwatch/notifications.yaml`, then reload
