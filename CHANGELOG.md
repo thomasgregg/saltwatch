@@ -2,6 +2,15 @@
 
 All notable changes to SaltWatch are documented here.
 
+## 1.2.0 - 2026-08-29
+
+- Added a Digest-authenticated local ESPHome web interface.
+- Added authenticated manual firmware upload through the web interface while
+  retaining password-protected native ESPHome OTA.
+- Embedded the web UI assets so the local interface does not depend on internet
+  access, and disabled browser log streaming to reduce exposure and overhead.
+- Kept automatic HTTP update checks and remote firmware downloads disabled.
+
 ## 1.1.0 - 2026-08-29
 
 - Added an ESP Web Tools bootstrap installer hosted with GitHub Pages.

@@ -4,7 +4,7 @@ SaltWatch is a small ESPHome project for reliable salt-level monitoring in a
 water-softener brine tank. It reports lid-to-salt distance, an estimate from
 0–100%, low-salt state, calibration health, and sensor health to Home Assistant.
 
-Version: **1.1.0**
+Version: **1.2.0**
 
 ESPHome project identifier: **`saltwatch.salt-monitor`**
 
@@ -24,8 +24,9 @@ monitoring:
 | Calibration validation and clamped percentage calculation | Prevents reversed, too-small, out-of-range, or zero spans from producing a plausible but wrong level. |
 | Low threshold with five-percentage-point hysteresis | Equality is consistently low and the warning does not chatter around the threshold. |
 | Fault, calibration, low-salt, and priority status entities | Makes every unavailable or invalid state explicit. |
-| Wi-Fi, encrypted native API, protected OTA, and basic logging | Supports secure Home Assistant operation and troubleshooting without a web server or cloud dependency. |
-| Optional USB web installer | Makes the first flash and Wi-Fi setup easier without adding an on-device web server or embedding credentials. |
+| Wi-Fi, encrypted native API, protected native OTA, and basic logging | Supports secure Home Assistant operation and troubleshooting without a cloud dependency. |
+| Authenticated local web UI and manual web OTA | Provides browser visibility and firmware upload without automatic downloads or an unauthenticated update endpoint. |
+| Optional USB web installer | Makes the first flash and Wi-Fi setup easier without embedding credentials. |
 
 The reviewed reference project at commit
 `734488f147f760a33626fafc236bbdc0187b28dd` was used only to understand the
@@ -40,7 +41,7 @@ filter never receives its first value.
 These are possible later enhancements, not version 1 features: automatic
 regeneration detection, last regeneration, overdue warnings, salt-consumption
 history, historical buffers, remaining-days prediction, usage trends, fast
-polling, MQTT, an on-device web server, HTTP update checks, automatic remote firmware
+polling, MQTT, automatic HTTP update checks, automatic remote firmware
 downloads, cloud services, RGB status behavior, a custom Home Assistant
 dashboard, notification automations, tank-height configuration, and extra
 configuration or diagnostic entities. They were excluded to keep firmware,
@@ -70,6 +71,8 @@ Official sources:
 - [ESPHome sensor timeout filter](https://esphome.io/components/sensor/filter/timeout/)
 - [ESPHome native API](https://esphome.io/components/api/)
 - [ESPHome OTA](https://esphome.io/components/ota/esphome/)
+- [ESPHome web server](https://esphome.io/components/web_server/)
+- [ESPHome web-server OTA](https://esphome.io/components/ota/web_server/)
 
 The U010 is not waterproof. Its official headline range is wider, but M5Stack
 notes that normal conditions are approximately 120 cm unless long-range mode
@@ -114,29 +117,47 @@ the required Web Serial interface.
    available to **Adopt** because the bootstrap advertises the official project
    configuration. Adopt it. Device Builder generates a unique API encryption
    key in the adopted YAML.
-6. Before the first wireless update, add `ota_password` to the Device Builder
-   `secrets.yaml`, then add this block to the adopted SaltWatch YAML:
+6. Before the first wireless update, add `ota_password`,
+   `web_server_username`, and `web_server_password` to the Device Builder
+   `secrets.yaml`, then add these blocks to the adopted SaltWatch YAML:
 
    ```yaml
+   web_server:
+     port: 80
+     version: 2
+     local: true
+     compression: gzip
+     log: false
+     auth:
+       type: digest
+       username: !secret web_server_username
+       password: !secret web_server_password
+
    ota:
      - platform: esphome
        id: saltwatch_ota
        password: !secret ota_password
+     - platform: web_server
+       id: saltwatch_web_ota
    ```
 
 7. Confirm the adopted YAML contains `api:` → `encryption:` → `key:`. Choose
    **Install → Wirelessly**. This replaces the bootstrap with the adopted,
-   encrypted configuration and enables the OTA password.
+   encrypted configuration and enables both protected update methods.
 8. Add the discovered SaltWatch ESPHome device under **Settings → Devices &
    services** in Home Assistant, using the API encryption key if prompted.
+9. Open `http://<device-name>.local/` or the device IP address and sign in with
+   the web username and password from `secrets.yaml`.
 
 The public bootstrap image contains no Wi-Fi password, API encryption key, or
 OTA password. It advertises encryption support, but communication is not
 encrypted until Device Builder installs the generated key; OTA is initially
 passwordless so that first adopted build can be installed. Perform the setup on
 a trusted local network, adopt it immediately, and complete step 7. The
-installed production firmware has no web server; the installer is only a
-static page that writes firmware over the local USB connection.
+bootstrap intentionally has no on-device web UI because a public factory image
+cannot contain private login credentials. The protected UI appears after the
+adopted production configuration is installed. The hosted installer itself is
+only a static page that writes firmware over the local USB connection.
 
 ## Create `secrets.yaml`
 
@@ -158,8 +179,10 @@ Generate a separate strong password for OTA, for example:
 openssl rand -base64 24
 ```
 
-Do not reuse the example text and do not commit `secrets.yaml`. SaltWatch does
-not enable a fallback access point, captive portal, or ESPHome web server.
+Generate another independent password for the web interface, and choose a
+non-default web username. Do not reuse either credential. Do not commit
+`secrets.yaml`. SaltWatch does not enable a fallback access point or captive
+portal.
 
 ## Manual first installation
 
@@ -182,7 +205,8 @@ not enable a fallback access point, captive portal, or ESPHome web server.
    if Home Assistant asks for it.
 7. Future firmware changes can be installed from ESPHome Device Builder over
    the network using **Install → Wirelessly**. The OTA password remains in
-   `secrets.yaml`; no on-device web updater or remote-download mechanism is enabled.
+   `secrets.yaml`. The authenticated local web updater described below is also
+   available; no automatic remote-download mechanism is enabled.
 
 Command-line equivalents, run from the directory containing the YAML, are:
 
@@ -193,6 +217,32 @@ esphome run saltwatch.yaml --device /dev/ttyUSB0
 
 On macOS the device often appears as `/dev/cu.usbserial-*`; select the actual
 port reported by your system rather than using `/dev/ttyUSB0` literally.
+
+## Local web interface and firmware updater
+
+After the production configuration is installed, browse to
+`http://saltwatch.local/` or the device's IP address and authenticate with
+`web_server_username` and `web_server_password`. If Device Builder adopted the
+bootstrap with a MAC suffix, use the adopted device name shown in Device Builder
+instead of `saltwatch`.
+
+The self-contained interface shows the public SaltWatch entities and permits
+the same number/button changes exposed to Home Assistant. Browser log streaming
+is disabled. To update manually:
+
+1. Compile the new production configuration in ESPHome Device Builder.
+2. Download the OTA firmware image, normally named `firmware.bin` or
+   `firmware.ota.bin`.
+3. Sign in to the SaltWatch web interface and find **OTA Update**.
+4. Select the OTA image and start the update.
+5. Keep power connected until the upload finishes and SaltWatch reboots.
+
+Never upload `firmware.factory.bin` through the device web page; factory images
+are only for USB flashing. The web interface uses HTTP Digest authentication,
+which keeps the password itself off the network, but the page and entity data
+are still not encrypted. Keep SaltWatch on a trusted, preferably segmented LAN
+and never expose port 80 to the internet. Native ESPHome OTA remains the
+preferred command-line/Device Builder update path.
 
 ## Home Assistant entities
 
@@ -336,7 +386,10 @@ Do not rely on alerts until this checklist passes:
 18. Restart SaltWatch and confirm calibration survives.
 19. Turn Home Assistant off for at least 30 minutes.
 20. Confirm SaltWatch does not repeatedly restart.
-21. Observe the installed system for several days before relying on alerts.
+21. Open the local web interface and confirm incorrect credentials are rejected.
+22. Confirm the authenticated web interface shows the SaltWatch entities.
+23. Test one web update with a valid `firmware.bin` or `firmware.ota.bin` image.
+24. Observe the installed system for several days before relying on alerts.
 
 ## Validation
 
@@ -373,3 +426,5 @@ the ESP32 merged factory image at flash offset 0, as required by ESP Web Tools.
   notification automation or dashboard.
 - The one-click installer is a bootstrap. Its short unencrypted adoption window
   is closed only after the production configuration is installed.
+- The local web UI uses HTTP rather than HTTPS. Digest authentication keeps the
+  password itself off the network, but does not encrypt entity data on the LAN.

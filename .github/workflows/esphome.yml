@@ -21,6 +21,8 @@ jobs:
           sed -i 's/YOUR_UNIQUE_WIFI_PASSWORD/validation-only-password/' secrets.yaml
           sed -i 's|PASTE_A_32_BYTE_BASE64_KEY_HERE|MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=|' secrets.yaml
           sed -i 's/YOUR_UNIQUE_LONG_OTA_PASSWORD/validation-only-ota-password/' secrets.yaml
+          sed -i 's/YOUR_UNIQUE_WEB_USERNAME/validation-user/' secrets.yaml
+          sed -i 's/YOUR_UNIQUE_LONG_WEB_PASSWORD/validation-only-web-password/' secrets.yaml
 
       - name: Validate production configuration
         run: esphome config saltwatch.yaml

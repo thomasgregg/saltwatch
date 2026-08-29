@@ -9,7 +9,20 @@ api:
   encryption:
     key: !secret api_encryption_key
 
+web_server:
+  port: 80
+  version: 2
+  local: true
+  compression: gzip
+  log: false
+  auth:
+    type: digest
+    username: !secret web_server_username
+    password: !secret web_server_password
+
 ota:
   - platform: esphome
     id: saltwatch_ota
     password: !secret ota_password
+  - platform: web_server
+    id: saltwatch_web_ota
