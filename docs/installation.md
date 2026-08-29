@@ -11,7 +11,8 @@ available for adoption in ESPHome Device Builder.
 ### What you need
 
 - M5Stack ATOM Lite C008
-- USB-A-to-USB-C **data** cable
+- USB **data** cable: USB-C for the ATOM Lite, with USB-C or USB-A to match the
+  computer
 - desktop Chrome or Microsoft Edge
 - 2.4 GHz Wi-Fi credentials
 - ESPHome Device Builder in Home Assistant for encrypted API adoption and later
@@ -35,7 +36,7 @@ interface is available immediately at that address without a login.
 
 ### If no serial port appears
 
-1. Confirm the cable supports data; many USB-C cables supply power only.
+1. Confirm the cable supports data; some USB cables supply power only.
 2. Disconnect and reconnect the ATOM Lite.
 3. Use a direct computer USB port instead of a hub.
 4. Close any software that may have claimed the serial port.
@@ -134,4 +135,3 @@ authentication. Anyone with network access to SaltWatch can change calibration,
 press exposed buttons, or replace the firmware. Keep the device on a trusted,
 preferably isolated IoT network, never expose its ports to the internet, and
 restrict access with firewall rules where possible.
-

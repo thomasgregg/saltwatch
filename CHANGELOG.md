@@ -22,6 +22,8 @@ All notable changes to SaltWatch are documented here.
 - Added a flat Contents section to the README for faster navigation.
 - Reworked the README introduction around the Home Assistant outcome and
   removed release metadata from the opening section.
+- Clarified that the installation cable may be USB-C-to-USB-C or
+  USB-A-to-USB-C; only the ATOM Lite end and data capability are fixed.
 
 ## 1.2.0 - 2026-08-29
 

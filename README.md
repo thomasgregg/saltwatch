@@ -54,7 +54,8 @@ core measurement.
 - M5Stack ATOM Lite **C008**
 - M5Stack ToF Unit **U010** with VL53L0X
 - Included Grove cable
-- USB-A-to-USB-C data cable for installation
+- USB data cable: USB-C for the ATOM Lite, with USB-C or USB-A to match the
+  computer
 - 5 V USB power supply
 - 3M Dual Lock SJ3550 and a rubber cable grommet for mounting
 

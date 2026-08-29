@@ -7,7 +7,8 @@
 - M5Stack ATOM Lite, model/SKU **C008**
 - M5Stack ToF Unit, model/SKU **U010**, containing a VL53L0X
 - Included HY2.0-4P Grove cable
-- USB-A-to-USB-C **data** cable
+- USB **data** cable: USB-C for the ATOM Lite, with USB-C or USB-A to match the
+  computer
 - 5 V USB power supply
 - 3M Dual Lock SJ3550 for removable mounting
 - Rubber cable grommet sized for the lid opening
@@ -101,4 +102,3 @@ Do not rely on low-salt alerts until this checklist passes.
 22. Confirm the device is reachable only from the intended trusted network.
 23. Test one web update using `firmware.bin` or `firmware.ota.bin`.
 24. Observe the installed system for several days before relying on alerts.
-
