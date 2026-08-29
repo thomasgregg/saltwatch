@@ -170,11 +170,11 @@
           <span slot="not-allowed">Web Serial access is blocked. Reload this HTTPS page and allow serial access.</span>
         </esp-web-install-button>
 
-        <p class="note"><strong>Security hand-off:</strong> the bootstrap contains no credentials and is temporarily unencrypted. Use it on a trusted network, immediately adopt SaltWatch in ESPHome Device Builder, add the API, OTA, and web credentials described in the instructions, and install the adopted configuration.</p>
+        <p class="note"><strong>Local-network warning:</strong> SaltWatch's web interface and both firmware update methods intentionally have no password. Anyone who can reach the device can change its controls or replace its firmware. Keep it on a trusted network, never expose it to the internet, and adopt it in ESPHome Device Builder to enable encrypted Home Assistant API access.</p>
       </section>
 
       <footer>
-        <span>Installer firmware 1.2.0</span>
+        <span>Installer firmware 1.3.0</span>
         <a href="https://github.com/thomasgregg/saltwatch">Source and full instructions</a>
         <a href="https://github.com/thomasgregg/saltwatch/blob/main/README.md#web-installer">Adoption steps</a>
       </footer>

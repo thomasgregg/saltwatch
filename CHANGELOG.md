@@ -2,6 +2,16 @@
 
 All notable changes to SaltWatch are documented here.
 
+## 1.3.0 - 2026-08-29
+
+- Removed the web-interface username and password at the owner's request.
+- Removed the native ESPHome OTA password at the owner's request.
+- Moved the local web UI and both OTA platforms into the shared configuration,
+  so they are present immediately after web installation and remain present
+  after Device Builder adoption without additional YAML edits.
+- Reduced required secrets to Wi-Fi credentials and the encrypted native API
+  key, and added explicit trusted-LAN warnings for the open control/update paths.
+
 ## 1.2.0 - 2026-08-29
 
 - Added a Digest-authenticated local ESPHome web interface.

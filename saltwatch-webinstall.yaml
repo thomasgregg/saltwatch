@@ -1,5 +1,5 @@
 # Public bootstrap build used only to create the ESP Web Tools factory image.
-# The production saltwatch.yaml keeps encrypted API and password-protected OTA.
+# The production saltwatch.yaml adds encrypted API access after adoption.
 packages:
   saltwatch: !include saltwatch-core.yaml
 
@@ -10,10 +10,6 @@ api:
   # Advertise encryption support so Device Builder generates a unique key when
   # the device is adopted. No key is embedded in the public factory image.
   encryption:
-
-ota:
-  - platform: esphome
-    id: saltwatch_ota
 
 dashboard_import:
   package_import_url: github://thomasgregg/saltwatch/saltwatch-core.yaml@main
