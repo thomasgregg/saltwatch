@@ -28,9 +28,13 @@ entity about:
 7. Save the automation.
 
 No YAML editing, Home Assistant package, or restart is required. The advance
-warning is sent when **Estimated Days Until Low Salt** first becomes available
-inside the chosen window or crosses into it from above. Repeated sensor updates
-inside the window do not produce duplicate forecast notices.
+warning is sent after the confirmation delay when **Estimated Days Until Low
+Salt** first becomes available inside the chosen window or crosses into it from
+above. The blueprint verifies that measurement and calibration are healthy
+before sending it. Repeated sensor updates inside the window do not produce
+duplicate forecast notices. A return from `unavailable` inside the warning
+window can notify again; this is intentional so a sensor outage cannot silently
+hide a still-current refill warning.
 
 If direct import is unavailable, copy
 [`home-assistant/blueprints/saltwatch-notifications.yaml`](../home-assistant/blueprints/saltwatch-notifications.yaml)
@@ -43,3 +47,7 @@ After saving, use Home Assistant's **Run actions** command to confirm the chosen
 notification target works. This tests delivery only; it does not simulate each
 trigger. Keep the default confirmation delay or increase it if temporary
 maintenance states should not notify you.
+
+The blueprint uses Home Assistant's standard `notify.send_message` action.
+Choose any phone, browser, speaker, or notification service that Home Assistant
+exposes as a `notify` entity.

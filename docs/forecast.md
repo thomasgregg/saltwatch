@@ -64,6 +64,9 @@ confirmation is pending:
 - if it falls back, the candidate is discarded as a temporary surface change;
 - gradual refills are compared with the lowest accepted level in the current
   cycle, so several smaller rises can still be recognized.
+- a candidate expires once its accepted confirmation bucket would be more than
+  one calendar day later, rather than remaining in `Confirming Refill`
+  indefinitely.
 
 When the previous cycle contained a trustworthy trend, SaltWatch learns that
 rate before resetting the current cycle. The post-refill forecast can therefore
@@ -75,7 +78,8 @@ salt bridge, moving the sensor, or changing the lid position can resemble a
 refill, while a very small top-up may stay below the detection threshold. After
 adding a small amount of salt, wait for Salt Level to settle and press **Record
 Salt Refill**. The button preserves any trustworthy completed-cycle rate and
-starts clean current-cycle learning.
+starts clean current-cycle learning. It refuses the action unless the current
+Salt Level, sensor health, and calibration are all valid.
 
 ## Forecast Status reference
 

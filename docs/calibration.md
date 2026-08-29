@@ -50,6 +50,11 @@ Each number must be edited at least once because SaltWatch stores a separate
 persistent completion flag for each calibration point. Numeric placeholders do
 not count as completed calibration.
 
+Changing either calibration distance after forecast learning has begun clears
+the learned forecast. Old percentages are not comparable with percentages from
+the new calibration. Changing only **Low Salt Threshold** keeps the learned
+consumption rate and recalculates the predicted days immediately.
+
 Valid calibration requires:
 
 - Full Distance between 5.0 and 120.0 cm;
@@ -112,3 +117,14 @@ underlying fault, calibration, and low-salt entities.
 - Do not immerse or wash the ToF Unit; it is not waterproof.
 - After a refill, allow two to three minutes for the displayed median to settle.
 
+## After adding salt
+
+A normal refill is detected automatically from a sustained rise in Salt Level.
+**Forecast Status** may show `Confirming Refill` until the next valid six-hour
+period. If SaltWatch learned a trustworthy earlier cycle, the estimate resumes
+from that rate immediately after confirmation while the new cycle starts.
+
+For a small top-up that does not raise Salt Level by roughly eight percentage
+points, wait for the measurement to settle and press **Record Salt Refill**.
+Do not press it when no salt was added: it deliberately closes the current
+forecast cycle. See the [forecast guide](forecast.md) for full behavior.

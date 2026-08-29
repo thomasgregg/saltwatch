@@ -39,6 +39,47 @@ def run() -> None:
     assert blueprint["blueprint"]["domain"] == "automation"
     assert blueprint["triggers"]
     assert blueprint["actions"]
+    assert blueprint["trigger_variables"] == {
+        "forecast_entity_for_trigger": {"!input": "forecast_entity"},
+        "forecast_notice_days_for_trigger": {"!input": "forecast_notice_days"},
+        "low_salt_entity_for_trigger": {"!input": "low_salt_entity"},
+        "sensor_fault_entity_for_trigger": {"!input": "sensor_fault_entity"},
+        "calibration_required_entity_for_trigger": {
+            "!input": "calibration_required_entity"
+        },
+        "salt_level_entity_for_trigger": {"!input": "salt_level_entity"},
+    }
+    forecast_trigger = next(
+        item for item in blueprint["triggers"] if item.get("id") == "forecast"
+    )
+    assert forecast_trigger["trigger"] == "template"
+    assert forecast_trigger["for"] == {"!input": "problem_delay"}
+    assert "is_number(days)" in forecast_trigger["value_template"]
+    assert "days | float > 0" in forecast_trigger["value_template"]
+    assert "days | float <= forecast_notice_days_for_trigger | float" in (
+        forecast_trigger["value_template"]
+    )
+    assert "is_state(low_salt_entity_for_trigger, 'off')" in (
+        forecast_trigger["value_template"]
+    )
+    assert "is_state(sensor_fault_entity_for_trigger, 'off')" in (
+        forecast_trigger["value_template"]
+    )
+    assert "is_state(calibration_required_entity_for_trigger, 'off')" in (
+        forecast_trigger["value_template"]
+    )
+    assert "is_number(states(salt_level_entity_for_trigger))" in (
+        forecast_trigger["value_template"]
+    )
+
+    blueprint_text = Path(
+        "home-assistant/blueprints/saltwatch-notifications.yaml"
+    ).read_text()
+    assert "is_state(low_salt_entity, 'off')" in blueprint_text
+    assert "is_state(sensor_fault_entity, 'off')" in blueprint_text
+    assert "is_state(calibration_required_entity, 'off')" in blueprint_text
+    assert "is_number(states(salt_level_entity))" in blueprint_text
+    assert "is_number(states(forecast_entity))" in blueprint_text
 
     core = load_yaml("saltwatch-core.yaml")
     assert core["esp32"]["board"] == "m5stack-atom"

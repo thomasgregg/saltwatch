@@ -19,6 +19,10 @@ All notable changes to SaltWatch are documented here.
   notification setup remains a one-click Home Assistant blueprint import.
 - Expanded regression coverage for noisy/outlier trends, refill spikes and
   confirmation, restored state, minimum evidence, and threshold boundaries.
+- Added post-refill operating guidance and forecast items to the hardware
+  acceptance checklist.
+- Hardened forecast notifications with a stable delayed warning window and
+  explicit measurement, low-salt, sensor, and calibration health checks.
 
 ## 1.4.0 - 2026-08-29
 

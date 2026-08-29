@@ -1,9 +1,10 @@
 blueprint:
-  name: SaltWatch problem and refill notifications
+  name: SaltWatch alerts
   description: >-
     Sends clear notifications for low salt, sensor faults, invalid calibration,
-    and an optional predicted-days warning. Recovery notifications can also be
-    enabled. Select the SaltWatch entities if their IDs differ from the defaults.
+    and the device-native days-until-low forecast. Recovery notifications can
+    also be enabled. Select the SaltWatch entities if their IDs differ from the
+    defaults.
   domain: automation
   author: SaltWatch
   homeassistant:
@@ -56,7 +57,7 @@ blueprint:
             domain: text_sensor
     forecast_entity:
       name: Estimated Days Until Low Salt
-      description: Built into SaltWatch 1.5.0 and later; no package is required.
+      description: Built into SaltWatch firmware; no package is required.
       default: sensor.saltwatch_estimated_days_until_low_salt
       selector:
         entity:
@@ -64,7 +65,7 @@ blueprint:
             domain: sensor
     forecast_notice_days:
       name: Forecast warning
-      description: Notify once when the estimate crosses this many days.
+      description: Notify when the estimate first appears or crosses this many days.
       default: 7
       selector:
         number:
@@ -92,8 +93,17 @@ variables:
   calibration_required_entity: !input calibration_required_entity
   salt_level_entity: !input salt_level_entity
   calibration_details_entity: !input calibration_details_entity
+  forecast_entity: !input forecast_entity
   forecast_notice_days: !input forecast_notice_days
   send_recovery_notifications: !input send_recovery_notifications
+
+trigger_variables:
+  forecast_entity_for_trigger: !input forecast_entity
+  forecast_notice_days_for_trigger: !input forecast_notice_days
+  low_salt_entity_for_trigger: !input low_salt_entity
+  sensor_fault_entity_for_trigger: !input sensor_fault_entity
+  calibration_required_entity_for_trigger: !input calibration_required_entity
+  salt_level_entity_for_trigger: !input salt_level_entity
 
 triggers:
   - trigger: state
@@ -111,9 +121,17 @@ triggers:
     entity_id: !input calibration_required_entity
     to: "on"
     for: !input problem_delay
-  - trigger: state
+  - trigger: template
     id: forecast
-    entity_id: !input forecast_entity
+    value_template: >-
+      {% set days = states(forecast_entity_for_trigger) %}
+      {{ is_number(days) and days | float > 0 and
+         days | float <= forecast_notice_days_for_trigger | float and
+         is_state(low_salt_entity_for_trigger, 'off') and
+         is_state(sensor_fault_entity_for_trigger, 'off') and
+         is_state(calibration_required_entity_for_trigger, 'off') and
+         is_number(states(salt_level_entity_for_trigger)) }}
+    for: !input problem_delay
   - trigger: state
     id: low_salt_recovered
     entity_id: !input low_salt_entity
@@ -173,11 +191,13 @@ actions:
             id: forecast
           - condition: template
             value_template: >-
-              {% set new = trigger.to_state.state if trigger.to_state else none %}
-              {% set old = trigger.from_state.state if trigger.from_state else none %}
-              {{ is_number(new) and new | float > 0 and
-                 new | float <= forecast_notice_days | float and
-                 (not is_number(old) or old | float > forecast_notice_days | float) }}
+              {{ is_state(low_salt_entity, 'off') and
+                 is_state(sensor_fault_entity, 'off') and
+                 is_state(calibration_required_entity, 'off') and
+                 is_number(states(salt_level_entity)) and
+                 is_number(states(forecast_entity)) and
+                 states(forecast_entity) | float > 0 and
+                 states(forecast_entity) | float <= forecast_notice_days | float }}
         sequence:
           - action: notify.send_message
             target:
@@ -186,7 +206,7 @@ actions:
               title: "SaltWatch: salt may run low soon"
               message: >-
                 Based on the recent trend, SaltWatch estimates about
-                {{ trigger.to_state.state }} days until the configured low-salt
+                {{ states(forecast_entity) }} days until the configured low-salt
                 threshold. This is an estimate; check the tank before relying on it.
       - conditions:
           - condition: trigger
@@ -224,7 +244,8 @@ actions:
           - condition: template
             value_template: >-
               {{ send_recovery_notifications and
-                 is_state(sensor_fault_entity, 'off') }}
+                 is_state(sensor_fault_entity, 'off') and
+                 is_number(states(salt_level_entity)) }}
         sequence:
           - action: notify.send_message
             target:
