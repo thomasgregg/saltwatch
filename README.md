@@ -1,18 +1,23 @@
 # SaltWatch
 
-Reliable salt-level monitoring for a water-softener brine tank, built with
-ESPHome and Home Assistant.
+**See your water-softener salt level in Home Assistant and know when it is time
+to refill.**
 
 [![ESPHome validation](https://github.com/thomasgregg/saltwatch/actions/workflows/esphome.yml/badge.svg)](https://github.com/thomasgregg/saltwatch/actions/workflows/esphome.yml)
 
 **[Install SaltWatch in your browser](https://thomasgregg.github.io/saltwatch/)**
 
-SaltWatch turns an M5Stack ATOM Lite and ToF distance sensor into a practical
-salt monitor. It shows how far the salt surface is from the lid, converts that
-measurement into a calibrated percentage, and makes faults or missing
-calibration obvious instead of leaving a stale value in Home Assistant.
+SaltWatch is a local, purpose-built monitor for a water-softener brine tank. An
+M5Stack distance sensor mounted under the lid measures the salt surface and
+turns that distance into a calibrated level from 0–100%.
 
-Version **1.3.0** · ESPHome project **`saltwatch.salt-monitor`**
+Once connected through ESPHome, Home Assistant shows the current distance,
+estimated salt level, low-salt warning, calibration state, and sensor health.
+These appear as native entities that can be placed on a dashboard or used in
+your own automations and notifications.
+SaltWatch explicitly marks failed or outdated measurements as unavailable, so
+an old reading cannot quietly look current after a blocked or disconnected
+sensor.
 
 ## Contents
 

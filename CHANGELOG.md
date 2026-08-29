@@ -20,6 +20,8 @@ All notable changes to SaltWatch are documented here.
   relying on ESP Web Tools for generic serial-port troubleshooting and keeping
   only SaltWatch-specific security and documentation guidance.
 - Added a flat Contents section to the README for faster navigation.
+- Reworked the README introduction around the Home Assistant outcome and
+  removed release metadata from the opening section.
 
 ## 1.2.0 - 2026-08-29
 
