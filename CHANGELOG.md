@@ -2,6 +2,24 @@
 
 All notable changes to SaltWatch are documented here.
 
+## 1.5.0 - 2026-08-29
+
+- Moved Estimated Days Until Low Salt from a manually installed Home Assistant
+  package into the SaltWatch device firmware.
+- Added sparse-data gates, six-hour and daily aggregation, a robust 28-day
+  Theil–Sen trend, residual-quality checks, and persisted completed-cycle rates.
+- Added two-step automatic refill confirmation that recognizes both abrupt and
+  gradual refills while excluding unconfirmed surface shifts from the trend.
+- Added Record Salt Refill for small or unusual top-ups and retained learned
+  prior-cycle consumption so forecasts can resume immediately after a refill.
+- Added Forecast Status and an optional Forecast Confidence diagnostic.
+- Made forecasting fail safe during sensor faults, invalid calibration, stale
+  levels, missing time, restored-data inconsistency, and pending refill checks.
+- Split forecast and notification guidance into focused documentation pages;
+  notification setup remains a one-click Home Assistant blueprint import.
+- Expanded regression coverage for noisy/outlier trends, refill spikes and
+  confirmation, restored state, minimum evidence, and threshold boundaries.
+
 ## 1.4.0 - 2026-08-29
 
 - Fixed recovery when the VL53L0X is disconnected and reconnected before the

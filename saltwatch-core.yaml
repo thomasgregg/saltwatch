@@ -1,11 +1,18 @@
 substitutions:
-  project_version: "1.4.0"
+  project_version: "1.5.0"
   sensor_min_cm: "5.0"
   sensor_max_cm: "120.0"
   minimum_calibration_span_cm: "10.0"
   measurement_timeout_ms: "180000"
   invalid_reading_limit: "3"
   low_salt_hysteresis_percent: "5.0"
+  forecast_daily_history_size: "28"
+  forecast_minimum_days: "6.0"
+  forecast_minimum_decline_percent: "2.0"
+  forecast_minimum_rate_per_day: "0.05"
+  forecast_maximum_mad_percent: "4.0"
+  forecast_refill_candidate_percent: "8.0"
+  forecast_refill_confirmation_percent: "6.0"
 
 esphome:
   name: saltwatch
@@ -28,6 +35,8 @@ esphome:
             } else {
               ESP_LOGI("sensor", "VL53L0X detected on I2C address 0x29");
             }
+        - script.execute: forecast_recalculate_model
+        - script.wait: forecast_recalculate_model
         - script.execute: evaluate_state
 
 esp32:
@@ -70,6 +79,22 @@ i2c:
   sda: GPIO26
   scl: GPIO32
   scan: true
+
+# Forecast learning uses Home Assistant's clock for durable daily timestamps.
+# Core sensing, calibration, fault handling, and an already learned forecast do
+# not depend on a live Home Assistant connection.
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+    # Fixed UTC makes aggregation identical for public and locally compiled
+    # firmware and avoids daylight-saving buckets with unequal duration.
+    timezone: UTC0
+    on_time:
+      - seconds: 0
+        minutes: 0
+        hours: "0,6,12,18"
+        then:
+          - script.execute: forecast_finalize_bucket
 
 globals:
   - id: full_calibration_completed
@@ -120,7 +145,783 @@ globals:
     restore_value: false
     initial_value: "false"
 
+  # Device-native forecasting stores only 28 daily aggregates plus compact
+  # completed-cycle statistics. It never stores the 30-second measurements.
+  - id: forecast_daily_levels
+    type: "std::array<float, ${forecast_daily_history_size}>"
+    restore_value: true
+    initial_value: "std::array<float, ${forecast_daily_history_size}>{}"
+
+  - id: forecast_daily_days
+    type: "std::array<int32_t, ${forecast_daily_history_size}>"
+    restore_value: true
+    initial_value: "std::array<int32_t, ${forecast_daily_history_size}>{}"
+
+  - id: forecast_daily_count
+    type: int
+    restore_value: true
+    initial_value: "0"
+
+  - id: forecast_recent_buckets
+    type: "std::array<float, 4>"
+    restore_value: true
+    initial_value: "std::array<float, 4>{}"
+
+  - id: forecast_recent_bucket_count
+    type: int
+    restore_value: true
+    initial_value: "0"
+
+  - id: forecast_day_sum
+    type: float
+    restore_value: true
+    initial_value: "0.0"
+
+  - id: forecast_day_bucket_count
+    type: int
+    restore_value: true
+    initial_value: "0"
+
+  - id: forecast_day_key
+    type: int32_t
+    restore_value: true
+    initial_value: "-1"
+
+  - id: forecast_refill_candidate
+    type: bool
+    restore_value: true
+    initial_value: "false"
+
+  - id: forecast_refill_base
+    type: float
+    restore_value: true
+    initial_value: "0.0"
+
+  - id: forecast_refill_candidate_level
+    type: float
+    restore_value: true
+    initial_value: "0.0"
+
+  - id: forecast_refill_candidate_day
+    type: int32_t
+    restore_value: true
+    initial_value: "-1"
+
+  # Lowest accepted six-hour level in the current usage cycle. Comparing a
+  # candidate with this floor also catches a refill spread across several
+  # buckets instead of only a single abrupt jump.
+  - id: forecast_cycle_low_level
+    type: float
+    restore_value: true
+    initial_value: "101.0"
+
+  - id: forecast_historical_rate
+    type: float
+    restore_value: true
+    initial_value: "-1.0"
+
+  - id: forecast_historical_variance
+    type: float
+    restore_value: true
+    initial_value: "0.0"
+
+  - id: forecast_completed_cycles
+    type: int
+    restore_value: true
+    initial_value: "0"
+
+  - id: forecast_calibration_full_tenths
+    type: int
+    restore_value: true
+    initial_value: "0"
+
+  - id: forecast_calibration_empty_tenths
+    type: int
+    restore_value: true
+    initial_value: "0"
+
+  # Six-hour input accumulation is deliberately RAM-only. A restart discards
+  # an incomplete bucket rather than creating a misleading cross-reboot rate.
+  - id: forecast_bucket_sum
+    type: float
+    restore_value: false
+    initial_value: "0.0"
+
+  - id: forecast_bucket_sample_count
+    type: int
+    restore_value: false
+    initial_value: "0"
+
+  - id: forecast_current_rate
+    type: float
+    restore_value: false
+    initial_value: "-1.0"
+
+  - id: forecast_current_days
+    type: float
+    restore_value: false
+    initial_value: "0.0"
+
+  - id: forecast_current_decline
+    type: float
+    restore_value: false
+    initial_value: "0.0"
+
+  - id: forecast_current_mad
+    type: float
+    restore_value: false
+    initial_value: "0.0"
+
+  - id: forecast_current_model_valid
+    type: bool
+    restore_value: false
+    initial_value: "false"
+
+  - id: forecast_reset_requested
+    type: bool
+    restore_value: false
+    initial_value: "false"
+
+  - id: forecast_was_available
+    type: bool
+    restore_value: false
+    initial_value: "false"
+
 script:
+  - id: forecast_reset_learning
+    mode: restart
+    then:
+      - lambda: |-
+          id(forecast_daily_levels).fill(0.0f);
+          id(forecast_daily_days).fill(0);
+          id(forecast_daily_count) = 0;
+          id(forecast_recent_buckets).fill(0.0f);
+          id(forecast_recent_bucket_count) = 0;
+          id(forecast_day_sum) = 0.0f;
+          id(forecast_day_bucket_count) = 0;
+          id(forecast_day_key) = -1;
+          id(forecast_refill_candidate) = false;
+          id(forecast_refill_base) = 0.0f;
+          id(forecast_refill_candidate_level) = 0.0f;
+          id(forecast_refill_candidate_day) = -1;
+          id(forecast_cycle_low_level) = 101.0f;
+          id(forecast_historical_rate) = -1.0f;
+          id(forecast_historical_variance) = 0.0f;
+          id(forecast_completed_cycles) = 0;
+          id(forecast_bucket_sum) = 0.0f;
+          id(forecast_bucket_sample_count) = 0;
+          id(forecast_current_rate) = -1.0f;
+          id(forecast_current_days) = 0.0f;
+          id(forecast_current_decline) = 0.0f;
+          id(forecast_current_mad) = 0.0f;
+          id(forecast_current_model_valid) = false;
+          ESP_LOGI("forecast", "Forecast learning reset because calibration changed");
+      - script.execute: forecast_evaluate
+
+  - id: forecast_recalculate_model
+    mode: restart
+    then:
+      - lambda: |-
+          int n = std::max(
+              0, std::min(id(forecast_daily_count), ${forecast_daily_history_size}));
+
+          // Restored values are treated as untrusted input. A power loss can
+          // interrupt independent preference writes, so keep only the valid,
+          // strictly ordered prefix rather than fitting a model to corruption.
+          int valid_count = 0;
+          for (int i = 0; i < n; i++) {
+            const float level = id(forecast_daily_levels)[i];
+            const int32_t day = id(forecast_daily_days)[i];
+            if (!std::isfinite(level) || level < 0.0f || level > 100.0f ||
+                day <= 0 ||
+                (i > 0 && day <= id(forecast_daily_days)[i - 1])) {
+              break;
+            }
+            valid_count++;
+          }
+          if (valid_count != id(forecast_daily_count)) {
+            ESP_LOGW("forecast",
+                     "Discarded inconsistent restored forecast samples");
+            id(forecast_daily_count) = valid_count;
+          }
+          n = valid_count;
+
+          const bool history_valid =
+              std::isfinite(id(forecast_historical_rate)) &&
+              id(forecast_historical_rate) >=
+                  ${forecast_minimum_rate_per_day} &&
+              id(forecast_historical_rate) <= 100.0f &&
+              std::isfinite(id(forecast_historical_variance)) &&
+              id(forecast_historical_variance) >= 0.0f &&
+              id(forecast_historical_variance) <= 10000.0f &&
+              id(forecast_completed_cycles) >= 0 &&
+              id(forecast_completed_cycles) <= 1000;
+          if (id(forecast_historical_rate) >=
+                  ${forecast_minimum_rate_per_day} &&
+              !history_valid) {
+            ESP_LOGW("forecast", "Discarded inconsistent historical forecast");
+            id(forecast_historical_rate) = -1.0f;
+            id(forecast_historical_variance) = 0.0f;
+            id(forecast_completed_cycles) = 0;
+          }
+
+          int recent_count = std::max(
+              0, std::min(id(forecast_recent_bucket_count), 4));
+          bool recent_valid = recent_count == id(forecast_recent_bucket_count);
+          for (int i = 0; i < recent_count; i++) {
+            const float level = id(forecast_recent_buckets)[i];
+            recent_valid = recent_valid && std::isfinite(level) &&
+                           level >= 0.0f && level <= 100.0f;
+          }
+          if (!recent_valid) {
+            ESP_LOGW("forecast", "Discarded inconsistent recent forecast state");
+            id(forecast_recent_buckets).fill(0.0f);
+            id(forecast_recent_bucket_count) = 0;
+            id(forecast_refill_candidate) = false;
+            id(forecast_refill_candidate_day) = -1;
+            id(forecast_cycle_low_level) = 101.0f;
+          } else {
+            id(forecast_recent_bucket_count) = recent_count;
+          }
+
+          if (!std::isfinite(id(forecast_cycle_low_level)) ||
+              id(forecast_cycle_low_level) < 0.0f ||
+              id(forecast_cycle_low_level) > 101.0f) {
+            id(forecast_cycle_low_level) = 101.0f;
+          }
+          const bool candidate_state_valid =
+              !id(forecast_refill_candidate) ||
+              (std::isfinite(id(forecast_refill_base)) &&
+               id(forecast_refill_base) >= 0.0f &&
+               id(forecast_refill_base) <= 100.0f &&
+               std::isfinite(id(forecast_refill_candidate_level)) &&
+               id(forecast_refill_candidate_level) >= 0.0f &&
+               id(forecast_refill_candidate_level) <= 100.0f &&
+               id(forecast_refill_candidate_day) > 0);
+          if (!candidate_state_valid) {
+            ESP_LOGW("forecast", "Discarded inconsistent refill candidate");
+            id(forecast_refill_candidate) = false;
+            id(forecast_refill_candidate_day) = -1;
+          }
+
+          const bool partial_day_valid =
+              id(forecast_day_bucket_count) >= 0 &&
+              id(forecast_day_bucket_count) <= 4 &&
+              std::isfinite(id(forecast_day_sum)) &&
+              id(forecast_day_sum) >= 0.0f &&
+              id(forecast_day_sum) <=
+                  100.0f * id(forecast_day_bucket_count) &&
+              (id(forecast_day_bucket_count) == 0 ||
+               id(forecast_day_key) > 0);
+          if (!partial_day_valid) {
+            ESP_LOGW("forecast", "Discarded inconsistent partial forecast day");
+            id(forecast_day_sum) = 0.0f;
+            id(forecast_day_bucket_count) = 0;
+            id(forecast_day_key) = -1;
+          }
+          id(forecast_current_rate) = -1.0f;
+          id(forecast_current_days) = 0.0f;
+          id(forecast_current_decline) = 0.0f;
+          id(forecast_current_mad) = 0.0f;
+          id(forecast_current_model_valid) = false;
+
+          if (n < 2) {
+            return;
+          }
+
+          const float observed_days = static_cast<float>(
+              id(forecast_daily_days)[n - 1] - id(forecast_daily_days)[0]);
+          id(forecast_current_days) = observed_days;
+          if (observed_days <= 0.0f) {
+            return;
+          }
+
+          std::array<float,
+                     (${forecast_daily_history_size} *
+                      (${forecast_daily_history_size} - 1)) / 2> slopes{};
+          int slope_count = 0;
+          for (int i = 0; i < n - 1; i++) {
+            for (int j = i + 1; j < n; j++) {
+              const int32_t elapsed =
+                  id(forecast_daily_days)[j] - id(forecast_daily_days)[i];
+              if (elapsed > 0) {
+                slopes[slope_count++] =
+                    (id(forecast_daily_levels)[j] -
+                     id(forecast_daily_levels)[i]) /
+                    static_cast<float>(elapsed);
+              }
+            }
+          }
+          if (slope_count == 0) {
+            return;
+          }
+          std::sort(slopes.begin(), slopes.begin() + slope_count);
+          const float slope = slope_count % 2 == 1
+                                  ? slopes[slope_count / 2]
+                                  : (slopes[slope_count / 2 - 1] +
+                                     slopes[slope_count / 2]) /
+                                        2.0f;
+          const float rate = -slope;
+          id(forecast_current_rate) = rate;
+          id(forecast_current_decline) = rate * observed_days;
+
+          // The Theil-Sen slope is resistant to isolated daily surface shifts.
+          // Median absolute residual provides a small, understandable quality
+          // gate without assuming normally distributed measurements.
+          std::array<float, ${forecast_daily_history_size}> intercepts{};
+          for (int i = 0; i < n; i++) {
+            intercepts[i] = id(forecast_daily_levels)[i] -
+                            slope * id(forecast_daily_days)[i];
+          }
+          std::sort(intercepts.begin(), intercepts.begin() + n);
+          const float intercept = n % 2 == 1
+                                      ? intercepts[n / 2]
+                                      : (intercepts[n / 2 - 1] +
+                                         intercepts[n / 2]) /
+                                            2.0f;
+          std::array<float, ${forecast_daily_history_size}> residuals{};
+          for (int i = 0; i < n; i++) {
+            const float expected =
+                intercept + slope * id(forecast_daily_days)[i];
+            residuals[i] =
+                fabsf(id(forecast_daily_levels)[i] - expected);
+          }
+          std::sort(residuals.begin(), residuals.begin() + n);
+          const float mad = n % 2 == 1
+                                ? residuals[n / 2]
+                                : (residuals[n / 2 - 1] +
+                                   residuals[n / 2]) /
+                                      2.0f;
+          id(forecast_current_mad) = mad;
+
+          id(forecast_current_model_valid) =
+              n >= 7 && observed_days >= ${forecast_minimum_days} &&
+              rate >= ${forecast_minimum_rate_per_day} &&
+              id(forecast_current_decline) >=
+                  ${forecast_minimum_decline_percent} &&
+              mad <= ${forecast_maximum_mad_percent};
+
+  - id: forecast_evaluate
+    mode: restart
+    then:
+      - lambda: |-
+          float days_remaining = NAN;
+          std::string status;
+          std::string confidence = "Unavailable";
+
+          const bool sensor_fault_active =
+              id(sensor_fault).has_state() && id(sensor_fault).state;
+          const bool calibration_required_active =
+              id(calibration_required).has_state() &&
+              id(calibration_required).state;
+          const bool level_valid =
+              id(salt_level).has_state() && std::isfinite(id(salt_level).state);
+
+          if (id(salt_status).has_state() &&
+              id(salt_status).state == "Initializing") {
+            status = "Initializing";
+          } else if (sensor_fault_active) {
+            status = "Sensor Fault";
+          } else if (calibration_required_active) {
+            status = "Calibration Required";
+          } else if (!level_valid) {
+            status = "Waiting for Measurement";
+          } else {
+            const float level = id(salt_level).state;
+            const float threshold = id(low_salt_threshold).state;
+            if (level <= threshold) {
+              days_remaining = 0.0f;
+              status = "Low Salt";
+              confidence = "Not Applicable";
+            } else if (id(forecast_refill_candidate)) {
+              status = "Confirming Refill";
+            } else {
+              const bool historical_valid =
+                  id(forecast_historical_rate) >=
+                  ${forecast_minimum_rate_per_day};
+              const bool current_valid = id(forecast_current_model_valid);
+              float effective_rate = -1.0f;
+              if (historical_valid && current_valid) {
+                const float current_weight =
+                    std::min(28.0f, id(forecast_current_days));
+                constexpr float prior_weight = 14.0f;
+                effective_rate =
+                    (id(forecast_historical_rate) * prior_weight +
+                     id(forecast_current_rate) * current_weight) /
+                    (prior_weight + current_weight);
+              } else if (current_valid) {
+                effective_rate = id(forecast_current_rate);
+              } else if (historical_valid) {
+                effective_rate = id(forecast_historical_rate);
+              }
+
+              if (effective_rate >= ${forecast_minimum_rate_per_day}) {
+                days_remaining =
+                    ceilf((level - threshold) / effective_rate);
+                status = "Available";
+
+                const float historical_cv =
+                    historical_valid && id(forecast_historical_rate) > 0.0f
+                        ? sqrtf(std::max(
+                              0.0f, id(forecast_historical_variance))) /
+                              id(forecast_historical_rate)
+                        : 99.0f;
+                if (current_valid && id(forecast_current_days) >= 21.0f &&
+                    id(forecast_current_mad) <= 1.5f &&
+                    (id(forecast_completed_cycles) >= 1 ||
+                     id(forecast_current_decline) >= 10.0f) &&
+                    historical_cv <= 0.60f) {
+                  confidence = "High";
+                } else if ((current_valid &&
+                            id(forecast_current_days) >= 12.0f &&
+                            id(forecast_current_mad) <= 3.0f) ||
+                           (id(forecast_completed_cycles) >= 2 &&
+                            historical_cv <= 0.75f)) {
+                  confidence = "Medium";
+                } else {
+                  confidence = "Low";
+                }
+              } else if (id(forecast_daily_count) >= 7 &&
+                         id(forecast_current_days) >=
+                             ${forecast_minimum_days}) {
+                status = "Insufficient Change";
+              } else if (!id(homeassistant_time).now().is_valid()) {
+                status = "Waiting for Time";
+              } else {
+                status = "Learning";
+              }
+            }
+          }
+
+          const bool available = std::isfinite(days_remaining);
+          if (available) {
+            if (!id(estimated_days_until_low_salt).has_state() ||
+                !std::isfinite(id(estimated_days_until_low_salt).state) ||
+                id(estimated_days_until_low_salt).state != days_remaining) {
+              id(estimated_days_until_low_salt).publish_state(days_remaining);
+            }
+          } else if (!id(estimated_days_until_low_salt).has_state() ||
+                     std::isfinite(id(estimated_days_until_low_salt).state)) {
+            id(estimated_days_until_low_salt).publish_state(NAN);
+          }
+
+          if (!id(forecast_status).has_state() ||
+              id(forecast_status).state != status) {
+            id(forecast_status).publish_state(status);
+          }
+          if (!id(forecast_confidence).has_state() ||
+              id(forecast_confidence).state != confidence) {
+            id(forecast_confidence).publish_state(confidence);
+          }
+
+          if (available != id(forecast_was_available)) {
+            if (available) {
+              ESP_LOGI("forecast",
+                       "Forecast available: %.0f days, confidence %s",
+                       days_remaining, confidence.c_str());
+            } else if (id(forecast_was_available)) {
+              ESP_LOGI("forecast", "Forecast unavailable: %s", status.c_str());
+            }
+            id(forecast_was_available) = available;
+          }
+
+  - id: forecast_finalize_bucket
+    mode: single
+    then:
+      - lambda: |-
+          auto now = id(homeassistant_time).now();
+          if (!now.is_valid()) {
+            ESP_LOGW("forecast", "Six-hour bucket skipped: time unavailable");
+            id(forecast_bucket_sum) = 0.0f;
+            id(forecast_bucket_sample_count) = 0;
+            return;
+          }
+
+          // At least half of the expected five-minute samples must be valid.
+          if (id(forecast_bucket_sample_count) < 36) {
+            ESP_LOGW("forecast",
+                     "Six-hour bucket skipped: only %d valid samples",
+                     id(forecast_bucket_sample_count));
+            id(forecast_bucket_sum) = 0.0f;
+            id(forecast_bucket_sample_count) = 0;
+            return;
+          }
+          const float bucket_level =
+              id(forecast_bucket_sum) /
+              static_cast<float>(id(forecast_bucket_sample_count));
+          id(forecast_bucket_sum) = 0.0f;
+          id(forecast_bucket_sample_count) = 0;
+
+          // A bucket ending at midnight belongs to the UTC day that just
+          // ended. UTC is fixed in the time component, so all builds behave
+          // identically and daylight-saving changes cannot distort a bucket.
+          const int64_t calendar_timestamp =
+              static_cast<int64_t>(now.timestamp) +
+              static_cast<int64_t>(now.timezone_offset());
+          const int32_t bucket_day =
+              static_cast<int32_t>((calendar_timestamp - 1) / 86400LL);
+
+          auto append_recent = [&](float value) {
+            int count = std::max(
+                0, std::min(id(forecast_recent_bucket_count), 4));
+            if (count < 4) {
+              id(forecast_recent_buckets)[count++] = value;
+            } else {
+              for (int i = 0; i < 3; i++) {
+                id(forecast_recent_buckets)[i] =
+                    id(forecast_recent_buckets)[i + 1];
+              }
+              id(forecast_recent_buckets)[3] = value;
+            }
+            id(forecast_recent_bucket_count) = count;
+          };
+
+          auto recent_median = [&]() -> float {
+            const int count = std::max(
+                0, std::min(id(forecast_recent_bucket_count), 4));
+            if (count == 0) {
+              return NAN;
+            }
+            std::array<float, 4> values = id(forecast_recent_buckets);
+            std::sort(values.begin(), values.begin() + count);
+            return count % 2 == 1
+                       ? values[count / 2]
+                       : (values[count / 2 - 1] + values[count / 2]) /
+                             2.0f;
+          };
+
+          auto learn_completed_cycle = [&]() {
+            if (!id(forecast_current_model_valid)) {
+              ESP_LOGI("forecast",
+                       "Completed cycle not learned: insufficient trustworthy trend");
+              return;
+            }
+            const float rate = id(forecast_current_rate);
+            const float evidence =
+                std::max(7.0f, std::min(42.0f, id(forecast_current_days)));
+            if (id(forecast_historical_rate) <
+                ${forecast_minimum_rate_per_day}) {
+              id(forecast_historical_rate) = rate;
+              id(forecast_historical_variance) = 0.0f;
+            } else {
+              const float alpha = evidence / (evidence + 28.0f);
+              const float previous = id(forecast_historical_rate);
+              const float delta = rate - previous;
+              id(forecast_historical_rate) =
+                  previous + alpha * delta;
+              id(forecast_historical_variance) =
+                  (1.0f - alpha) *
+                  (id(forecast_historical_variance) +
+                   alpha * delta * delta);
+            }
+            if (id(forecast_completed_cycles) < 1000) {
+              id(forecast_completed_cycles) += 1;
+            }
+            ESP_LOGI("forecast",
+                     "Learned completed usage cycle at %.3f percentage points/day",
+                     rate);
+          };
+
+          auto clear_current_cycle = [&]() {
+            id(forecast_daily_levels).fill(0.0f);
+            id(forecast_daily_days).fill(0);
+            id(forecast_daily_count) = 0;
+            id(forecast_day_sum) = 0.0f;
+            id(forecast_day_bucket_count) = 0;
+            id(forecast_day_key) = -1;
+            id(forecast_current_rate) = -1.0f;
+            id(forecast_current_days) = 0.0f;
+            id(forecast_current_decline) = 0.0f;
+            id(forecast_current_mad) = 0.0f;
+            id(forecast_current_model_valid) = false;
+          };
+
+          bool accept_bucket = true;
+          if (id(forecast_refill_candidate)) {
+            const int32_t candidate_age =
+                bucket_day - id(forecast_refill_candidate_day);
+            if (id(forecast_refill_candidate_day) <= 0 ||
+                candidate_age < 0 || candidate_age > 1) {
+              id(forecast_refill_candidate) = false;
+              id(forecast_refill_candidate_day) = -1;
+              append_recent(bucket_level);
+              id(forecast_cycle_low_level) =
+                  std::min(id(forecast_cycle_low_level), bucket_level);
+              ESP_LOGI("forecast", "Expired stale refill candidate");
+            } else if (bucket_level >=
+                id(forecast_refill_base) +
+                    ${forecast_refill_confirmation_percent}) {
+              learn_completed_cycle();
+              clear_current_cycle();
+              id(forecast_recent_buckets).fill(0.0f);
+              id(forecast_recent_bucket_count) = 0;
+              append_recent(id(forecast_refill_candidate_level));
+              append_recent(bucket_level);
+              id(forecast_cycle_low_level) = std::min(
+                  id(forecast_refill_candidate_level), bucket_level);
+              id(forecast_refill_candidate) = false;
+              id(forecast_refill_candidate_day) = -1;
+              ESP_LOGI("forecast",
+                       "Salt refill confirmed automatically at %.1f%%",
+                       bucket_level);
+            } else {
+              // Treat an unconfirmed one-bucket rise as surface noise. It is
+              // deliberately not admitted into the daily trend.
+              id(forecast_refill_candidate) = false;
+              id(forecast_refill_candidate_day) = -1;
+              append_recent(bucket_level);
+              id(forecast_cycle_low_level) =
+                  std::min(id(forecast_cycle_low_level), bucket_level);
+              ESP_LOGI("forecast", "Refill candidate rejected as transient");
+            }
+          } else {
+            const float recent_baseline = recent_median();
+            const float cycle_floor = id(forecast_cycle_low_level);
+            float baseline = recent_baseline;
+            if (std::isfinite(cycle_floor) && cycle_floor >= 0.0f &&
+                cycle_floor <= 100.0f) {
+              baseline = std::isfinite(recent_baseline)
+                             ? std::min(recent_baseline, cycle_floor)
+                             : cycle_floor;
+            }
+            if (id(forecast_recent_bucket_count) >= 3 &&
+                std::isfinite(baseline) &&
+                bucket_level >=
+                    baseline + ${forecast_refill_candidate_percent}) {
+              id(forecast_refill_candidate) = true;
+              id(forecast_refill_base) = baseline;
+              id(forecast_refill_candidate_level) = bucket_level;
+              id(forecast_refill_candidate_day) = bucket_day;
+              accept_bucket = false;
+              ESP_LOGI("forecast",
+                       "Possible salt refill detected; awaiting confirmation");
+            } else {
+              append_recent(bucket_level);
+              id(forecast_cycle_low_level) =
+                  std::min(id(forecast_cycle_low_level), bucket_level);
+            }
+          }
+
+          if (!accept_bucket || id(forecast_refill_candidate)) {
+            return;
+          }
+
+          auto append_daily = [&](int32_t day, float value) {
+            int count = std::max(
+                0, std::min(id(forecast_daily_count),
+                            ${forecast_daily_history_size}));
+            if (count > 0 && day < id(forecast_daily_days)[count - 1]) {
+              ESP_LOGW("forecast", "Daily aggregate ignored after clock moved backward");
+              return;
+            }
+            if (count > 0 && day == id(forecast_daily_days)[count - 1]) {
+              id(forecast_daily_levels)[count - 1] = value;
+              return;
+            }
+            if (count < ${forecast_daily_history_size}) {
+              id(forecast_daily_days)[count] = day;
+              id(forecast_daily_levels)[count] = value;
+              id(forecast_daily_count) = count + 1;
+            } else {
+              for (int i = 0; i < ${forecast_daily_history_size} - 1; i++) {
+                id(forecast_daily_days)[i] = id(forecast_daily_days)[i + 1];
+                id(forecast_daily_levels)[i] =
+                    id(forecast_daily_levels)[i + 1];
+              }
+              id(forecast_daily_days)[${forecast_daily_history_size} - 1] = day;
+              id(forecast_daily_levels)[${forecast_daily_history_size} - 1] =
+                  value;
+            }
+          };
+
+          if (id(forecast_day_key) >= 0 &&
+              bucket_day > id(forecast_day_key)) {
+            if (id(forecast_day_bucket_count) >= 2) {
+              append_daily(
+                  id(forecast_day_key),
+                  id(forecast_day_sum) /
+                      static_cast<float>(id(forecast_day_bucket_count)));
+            }
+            id(forecast_day_sum) = 0.0f;
+            id(forecast_day_bucket_count) = 0;
+            id(forecast_day_key) = bucket_day;
+          } else if (id(forecast_day_key) < 0) {
+            id(forecast_day_key) = bucket_day;
+          } else if (bucket_day < id(forecast_day_key)) {
+            ESP_LOGW("forecast", "Six-hour bucket ignored after clock moved backward");
+            return;
+          }
+
+          id(forecast_day_sum) += bucket_level;
+          id(forecast_day_bucket_count) += 1;
+
+          if (now.hour == 0) {
+            if (id(forecast_day_bucket_count) >= 2) {
+              append_daily(
+                  id(forecast_day_key),
+                  id(forecast_day_sum) /
+                      static_cast<float>(id(forecast_day_bucket_count)));
+            }
+            id(forecast_day_sum) = 0.0f;
+            id(forecast_day_bucket_count) = 0;
+            id(forecast_day_key) = -1;
+          }
+      - script.execute: forecast_recalculate_model
+      - script.wait: forecast_recalculate_model
+      - script.execute: forecast_evaluate
+
+  - id: forecast_record_refill
+    mode: single
+    then:
+      - lambda: |-
+          if (id(forecast_current_model_valid)) {
+            const float rate = id(forecast_current_rate);
+            const float evidence =
+                std::max(7.0f, std::min(42.0f, id(forecast_current_days)));
+            if (id(forecast_historical_rate) <
+                ${forecast_minimum_rate_per_day}) {
+              id(forecast_historical_rate) = rate;
+              id(forecast_historical_variance) = 0.0f;
+            } else {
+              const float alpha = evidence / (evidence + 28.0f);
+              const float previous = id(forecast_historical_rate);
+              const float delta = rate - previous;
+              id(forecast_historical_rate) = previous + alpha * delta;
+              id(forecast_historical_variance) =
+                  (1.0f - alpha) *
+                  (id(forecast_historical_variance) +
+                   alpha * delta * delta);
+            }
+            if (id(forecast_completed_cycles) < 1000) {
+              id(forecast_completed_cycles) += 1;
+            }
+          }
+
+          id(forecast_daily_levels).fill(0.0f);
+          id(forecast_daily_days).fill(0);
+          id(forecast_daily_count) = 0;
+          id(forecast_recent_buckets).fill(0.0f);
+          id(forecast_recent_buckets)[0] = id(salt_level).state;
+          id(forecast_recent_bucket_count) = 1;
+          id(forecast_day_sum) = 0.0f;
+          id(forecast_day_bucket_count) = 0;
+          id(forecast_day_key) = -1;
+          id(forecast_refill_candidate) = false;
+          id(forecast_refill_candidate_day) = -1;
+          id(forecast_refill_base) = 0.0f;
+          id(forecast_refill_candidate_level) = 0.0f;
+          id(forecast_cycle_low_level) = id(salt_level).state;
+          id(forecast_bucket_sum) = 0.0f;
+          id(forecast_bucket_sample_count) = 0;
+          id(forecast_current_rate) = -1.0f;
+          id(forecast_current_days) = 0.0f;
+          id(forecast_current_decline) = 0.0f;
+          id(forecast_current_mad) = 0.0f;
+          id(forecast_current_model_valid) = false;
+          ESP_LOGI("forecast", "Salt refill recorded manually at %.1f%%",
+                   id(salt_level).state);
+      - script.execute: forecast_evaluate
+
   - id: evaluate_state
     mode: restart
     then:
@@ -187,6 +988,19 @@ script:
               full_in_range && empty_in_range &&
               full_tenths < empty_tenths &&
               span_tenths >= 100;
+
+          if (calibration_valid) {
+            const bool signatures_initialized =
+                id(forecast_calibration_full_tenths) != 0 &&
+                id(forecast_calibration_empty_tenths) != 0;
+            if (signatures_initialized &&
+                (id(forecast_calibration_full_tenths) != full_tenths ||
+                 id(forecast_calibration_empty_tenths) != empty_tenths)) {
+              id(forecast_reset_requested) = true;
+            }
+            id(forecast_calibration_full_tenths) = full_tenths;
+            id(forecast_calibration_empty_tenths) = empty_tenths;
+          }
 
           std::string calibration_message;
           if (!id(full_calibration_completed) &&
@@ -283,6 +1097,14 @@ script:
           if (!id(salt_status).has_state() || id(salt_status).state != status) {
             id(salt_status).publish_state(status);
           }
+      - if:
+          condition:
+            lambda: return id(forecast_reset_requested);
+          then:
+            - lambda: id(forecast_reset_requested) = false;
+            - script.execute: forecast_reset_learning
+            - script.wait: forecast_reset_learning
+      - script.execute: forecast_evaluate
 
 number:
   - platform: template
@@ -300,6 +1122,11 @@ number:
     set_action:
       - lambda: |-
           const float canonical = roundf(x * 10.0f) / 10.0f;
+          const int canonical_tenths = lroundf(canonical * 10.0f);
+          id(forecast_reset_requested) =
+              id(forecast_calibration_full_tenths) != 0 &&
+              id(forecast_calibration_full_tenths) != canonical_tenths;
+          id(forecast_calibration_full_tenths) = canonical_tenths;
           id(full_distance).publish_state(canonical);
           id(full_calibration_completed) = true;
           ESP_LOGI("calibration", "Full calibration captured: %.1f cm", canonical);
@@ -307,7 +1134,7 @@ number:
           if (!id(empty_calibration_completed)) {
             ESP_LOGW("calibration", "Calibration rejected: Empty calibration is incomplete");
           } else {
-            const int full_tenths = lroundf(canonical * 10.0f);
+            const int full_tenths = canonical_tenths;
             const int empty_tenths = lroundf(id(empty_distance).state * 10.0f);
             if (full_tenths >= empty_tenths) {
               ESP_LOGW("calibration", "Calibration rejected: Full Distance must be less than Empty Distance");
@@ -315,6 +1142,13 @@ number:
               ESP_LOGW("calibration", "Calibration rejected: span must be at least 10.0 cm");
             }
           }
+      - if:
+          condition:
+            lambda: return id(forecast_reset_requested);
+          then:
+            - lambda: id(forecast_reset_requested) = false;
+            - script.execute: forecast_reset_learning
+            - script.wait: forecast_reset_learning
       - script.execute: evaluate_state
 
   - platform: template
@@ -332,6 +1166,11 @@ number:
     set_action:
       - lambda: |-
           const float canonical = roundf(x * 10.0f) / 10.0f;
+          const int canonical_tenths = lroundf(canonical * 10.0f);
+          id(forecast_reset_requested) =
+              id(forecast_calibration_empty_tenths) != 0 &&
+              id(forecast_calibration_empty_tenths) != canonical_tenths;
+          id(forecast_calibration_empty_tenths) = canonical_tenths;
           id(empty_distance).publish_state(canonical);
           id(empty_calibration_completed) = true;
           ESP_LOGI("calibration", "Empty calibration captured: %.1f cm", canonical);
@@ -340,13 +1179,20 @@ number:
             ESP_LOGW("calibration", "Calibration rejected: Full calibration is incomplete");
           } else {
             const int full_tenths = lroundf(id(full_distance).state * 10.0f);
-            const int empty_tenths = lroundf(canonical * 10.0f);
+            const int empty_tenths = canonical_tenths;
             if (full_tenths >= empty_tenths) {
               ESP_LOGW("calibration", "Calibration rejected: Full Distance must be less than Empty Distance");
             } else if ((empty_tenths - full_tenths) < 100) {
               ESP_LOGW("calibration", "Calibration rejected: span must be at least 10.0 cm");
             }
           }
+      - if:
+          condition:
+            lambda: return id(forecast_reset_requested);
+          then:
+            - lambda: id(forecast_reset_requested) = false;
+            - script.execute: forecast_reset_learning
+            - script.wait: forecast_reset_learning
       - script.execute: evaluate_state
 
   - platform: template
@@ -418,6 +1264,28 @@ button:
                 tag: calibration
                 format: "Set Current Distance as Empty rejected: no valid filtered distance"
 
+  - platform: template
+    name: "Record Salt Refill"
+    id: record_salt_refill
+    entity_category: config
+    on_press:
+      - if:
+          condition:
+            lambda: |-
+              return id(salt_level).has_state() &&
+                     std::isfinite(id(salt_level).state) &&
+                     id(sensor_fault).has_state() &&
+                     !id(sensor_fault).state &&
+                     id(calibration_required).has_state() &&
+                     !id(calibration_required).state;
+          then:
+            - script.execute: forecast_record_refill
+          else:
+            - logger.log:
+                level: WARN
+                tag: forecast
+                format: "Record Salt Refill rejected: measurement or calibration unavailable"
+
 sensor:
   # Internal raw/filter path. Invalid samples are rejected before the median.
   # The timeout is deliberately last, so its NaN reaches on_value unchanged.
@@ -482,6 +1350,16 @@ sensor:
     accuracy_decimals: 1
     update_interval: never
 
+  - platform: template
+    name: "Estimated Days Until Low Salt"
+    id: estimated_days_until_low_salt
+    icon: mdi:calendar-clock
+    unit_of_measurement: "d"
+    device_class: duration
+    state_class: measurement
+    accuracy_decimals: 0
+    update_interval: never
+
   - platform: wifi_signal
     name: "WiFi Signal"
     id: wifi_signal_db
@@ -527,12 +1405,48 @@ text_sensor:
     entity_category: diagnostic
     update_interval: never
 
+  - platform: template
+    name: "Forecast Status"
+    id: forecast_status
+    icon: mdi:chart-timeline-variant
+    update_interval: never
+
+  - platform: template
+    name: "Forecast Confidence"
+    id: forecast_confidence
+    icon: mdi:chart-bell-curve-cumulative
+    entity_category: diagnostic
+    disabled_by_default: true
+    update_interval: never
+
 interval:
   # Covers repeated invalid readings and the no-valid-reading-at-boot gap in
   # ESPHome's timeout filter, which only starts after its first input.
   - interval: 5s
     then:
       - script.execute: evaluate_state
+
+  # Sample the already validated Salt Level slowly. A six-hour bucket needs at
+  # least 36 fresh five-minute samples, so faults and long gaps cannot be
+  # mistaken for consumption.
+  - interval: 5min
+    then:
+      - lambda: |-
+          const uint64_t now_ms =
+              static_cast<uint64_t>(esp_timer_get_time()) / 1000ULL;
+          const bool fresh =
+              id(has_valid_measurement) &&
+              (now_ms - id(last_valid_measurement_ms)) <= 90000ULL;
+          const bool trustworthy =
+              fresh && id(salt_level).has_state() &&
+              std::isfinite(id(salt_level).state) &&
+              id(sensor_fault).has_state() && !id(sensor_fault).state &&
+              id(calibration_required).has_state() &&
+              !id(calibration_required).state;
+          if (trustworthy) {
+            id(forecast_bucket_sum) += id(salt_level).state;
+            id(forecast_bucket_sample_count) += 1;
+          }
 
   # ESPHome's VL53L0X driver cannot always resume after power is removed during
   # a transaction. Probe while faulted and permit one recovery reboot whether

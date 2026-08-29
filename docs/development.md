@@ -13,7 +13,6 @@
 | `docs/index.html` | ESP Web Tools installer page. |
 | `docs/manifest.json` | Versioned ESP Web Tools manifest. |
 | `docs/*.factory.bin` | Published versioned browser-installer factory images. |
-| `home-assistant/saltwatch-prediction.yaml` | Optional Recorder-backed forecast package. |
 | `home-assistant/blueprints/` | Optional SaltWatch notification blueprint. |
 | `tests/` | Small logic, Home Assistant YAML, and release-metadata regression checks. |
 | `.github/workflows/esphome.yml` | Clean configuration and compile validation. |
@@ -49,7 +48,7 @@ web interface intentionally do not have credentials.
 
 ## ESPHome version
 
-SaltWatch 1.4.0 is validated with:
+SaltWatch 1.5.0 is validated with:
 
 - ESPHome 2026.8.1
 - ESP-IDF 5.5.5
@@ -106,17 +105,17 @@ rg -n "web_server|reboot_timeout|api:|ota:|password:" \
 The published browser image is scanned for validation credentials, checked for
 the ESP32 image header, and hashed before and after GitHub Pages deployment.
 
-## Current v1.4.0 build results
+## Current v1.5.0 build results
 
 | Build | RAM | Application flash | Result |
 | --- | ---: | ---: | --- |
-| Production | 26.1% | 48.1% | Passed |
-| Browser installer | 26.2% | 48.7% | Passed |
+| Production | 27.5% | 49.1% | Passed |
+| Browser installer | 27.6% | 49.7% | Passed |
 
-The v1.4.0 hosted factory image is 958,928 bytes with SHA-256:
+The v1.5.0 hosted factory image is 977,504 bytes with SHA-256:
 
 ```text
-2a352944061fc034b1ab7114e0f7e43ab39422015e1bb960456267dc9cb755a7
+48dfbe3be0884e538a533daf15dfed66e76477f581d351dd7333592267f94004
 ```
 
 ## Configuration audit expectations

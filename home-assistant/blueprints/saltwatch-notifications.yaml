@@ -56,7 +56,7 @@ blueprint:
             domain: text_sensor
     forecast_entity:
       name: Estimated Days Until Low Salt
-      description: Install the optional prediction package to use this warning.
+      description: Built into SaltWatch 1.5.0 and later; no package is required.
       default: sensor.saltwatch_estimated_days_until_low_salt
       selector:
         entity:

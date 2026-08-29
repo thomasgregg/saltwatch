@@ -14,7 +14,7 @@ lambdas and watchdog scripts; it does not use a custom C++ component.
 | Node name | `saltwatch` |
 | Friendly name | `SaltWatch` |
 | ESPHome project | `saltwatch.salt-monitor` |
-| Release | 1.4.0 |
+| Release | 1.5.0 |
 | Board | `m5stack-atom` |
 | Framework | ESP-IDF |
 | I²C | SDA GPIO26, SCL GPIO32 |
@@ -146,16 +146,20 @@ higher-priority problem is active.
 | --- | --- | --- |
 | Distance to Salt | Sensor, cm | One decimal, measurement state class, five-valid-sample median, unavailable after timeout. |
 | Salt Level | Sensor, % | One decimal, measurement state class, clamped 0–100%, unavailable outside valid operating conditions. |
+| Estimated Days Until Low Salt | Sensor, days | Device-native threshold forecast; unavailable unless its inputs and learned rate are trustworthy. |
 | Full Distance | Number, cm | 5–120 cm, 0.1 cm steps, persistent; editing completes full calibration. |
 | Empty Distance | Number, cm | 5–120 cm, 0.1 cm steps, persistent; editing completes empty calibration. |
 | Low Salt Threshold | Number, % | 5–50%, whole-percent steps, persistent, default 20%. |
 | Set Current Distance as Full | Button | Captures only a valid filtered distance. |
 | Set Current Distance as Empty | Button | Captures only a valid filtered distance. |
+| Record Salt Refill | Button | Preserves a trustworthy learned rate and starts a clean forecast cycle. |
 | Low Salt | Problem binary sensor | Inclusive threshold with five-point clearing hysteresis. |
 | Sensor Fault | Problem binary sensor | Raw-invalid, repeated-invalid, startup, timeout, range, and hardware checks. |
 | Calibration Required | Problem binary sensor | Persistent completion, range, order, and minimum-span checks. |
 | Salt Status | Text sensor | Derived priority state. |
 | Calibration Details | Diagnostic text sensor | Exact missing or invalid calibration reason, or `Valid`. |
+| Forecast Status | Text sensor | Explains forecast availability and learning state. |
+| Forecast Confidence | Diagnostic text sensor | Low/Medium/High evidence quality; disabled by default. |
 | WiFi Signal | Diagnostic sensor | Standard ESPHome Wi-Fi RSSI. |
 | Last Valid Measurement Age | Diagnostic sensor, s | Monotonic age of the most recent accepted raw reading; disabled by default to avoid unnecessary history. |
 
@@ -165,6 +169,10 @@ higher-priority problem is active.
 - Home Assistant can remain offline without restarting SaltWatch or clearing
   calibration.
 - Measurement and local status evaluation continue without Home Assistant.
+- Home Assistant supplies calendar time for new daily forecast aggregates. Once
+  synchronized, the device clock continues through temporary disconnections;
+  an already learned forecast can be calculated after a restart even before
+  the clock reconnects.
 - The production native API uses encryption.
 - The local web interface is self-contained and does not load its assets from
   the internet.
@@ -172,17 +180,42 @@ higher-priority problem is active.
 - Web UI, web OTA, and native OTA are intentionally passwordless.
 - No fallback access point or captive portal is enabled.
 
+## Forecast architecture
+
+Forecasting consumes only the already validated Salt Level. Every five minutes,
+a fresh value is added to a RAM-only accumulator. Six-hour buckets require at
+least 36 valid samples, daily values require two accepted buckets, and only 28
+daily aggregates are persisted. A restart discards the incomplete RAM bucket.
+
+The current-cycle rate uses a Theil–Sen median of all pairwise daily slopes.
+The model requires seven values spanning six days, at least 2% modeled decline,
+a rate of at least 0.05 percentage points/day, and median absolute residual no
+greater than 4%. Restored samples are range- and order-checked before use.
+
+A rise of 8 percentage points above the recent/cycle-low baseline becomes a
+refill candidate. The next six-hour bucket must remain at least 6 points above
+the baseline. An unconfirmed candidate is excluded from the daily trend. A
+confirmed cycle's trustworthy rate is retained as exponentially weighted
+historical evidence and blended with the new cycle; changing either calibration
+point clears all learned rates and aggregates.
+
+Forecast output is forced unavailable during initialization, Sensor Fault,
+Calibration Required, missing Salt Level, or refill confirmation. Low Salt
+publishes 0 forecast days. See the [forecast guide](forecast.md) for the
+user-facing status reference.
+
 ## Deliberately excluded
 
 The SaltWatch firmware does not implement automatic regeneration detection,
-last regeneration, overdue warnings, salt-consumption history, historical
-buffers, usage trends, fast polling, MQTT, automatic HTTP update checks, remote
+last regeneration, overdue warnings, raw measurement-history buffers, user-facing
+usage trends, fast polling, MQTT, automatic HTTP update checks, remote
 firmware downloads, cloud services, RGB status behavior, a custom Home
 Assistant dashboard, or tank-height configuration.
 
-An optional Home Assistant package provides a days-until-low estimate, and an
-optional blueprint provides notifications. They do not add history or
-forecasting state to the firmware and are not required for core operation.
+The built-in predictor stores compact daily aggregates and completed-cycle
+statistics only; it does not add raw historical measurement storage. An optional
+Home Assistant blueprint provides notifications and is not required for device
+operation.
 
 These may be considered later, but none is required for dependable measurement
 and explicit failure reporting.
@@ -197,9 +230,14 @@ and explicit failure reporting.
   surface by approximately two to three minutes.
 - Recovery from a stalled or reconnected I²C sensor may require one controlled
   reboot to initialize the standard ESPHome driver.
-- The optional days-until-low value needs at least seven days of Home Assistant
-  Recorder history and a meaningful downward trend. It can be unavailable or
-  inaccurate around refills and changing water use.
+- A first forecast needs at least seven valid daily values, six elapsed days,
+  and meaningful decline. It remains an advisory estimate when water use or the
+  optical salt surface changes.
+- The predictor needs one Home Assistant time synchronization before it can add
+  calendar-dated learning samples. Core monitoring does not require the clock.
+- Automatic refill detection cannot always distinguish a physical refill from
+  a persistent salt bridge or sensor/lid movement. Small top-ups may require the
+  Record Salt Refill button.
 - Network access is equivalent to device administration because the web UI and
   OTA paths are passwordless.
 

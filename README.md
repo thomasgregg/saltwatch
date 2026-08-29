@@ -26,7 +26,8 @@ sensor.
 - [Quick start](#quick-start)
 - [Calibration](#calibration)
 - [Home Assistant entities](#home-assistant-entities)
-- [Optional forecast and notifications](#optional-forecast-and-notifications)
+- [Forecast](#forecast)
+- [Notifications](#notifications)
 - [Trustworthy failure behavior](#trustworthy-failure-behavior)
 - [Local web interface and updates](#local-web-interface-and-updates)
 - [Documentation](#documentation)
@@ -46,10 +47,9 @@ designed around those two problems:
 - remove stale measurements automatically when valid readings stop; and
 - continue measuring when Home Assistant is offline.
 
-The device firmware deliberately avoids regeneration tracking, historical
-buffers, cloud services, MQTT, and other features that do not improve the core
-measurement. An optional Home Assistant forecast and notification blueprint
-build on the reliable entities without making the device dependent on them.
+The firmware also learns the tank's rate of decline and estimates when it will
+reach the low-salt threshold. The estimate runs on the device, survives normal
+restarts, and never overrides measurement or fault safety.
 
 ## Hardware
 
@@ -117,6 +117,8 @@ rules, manual calibration, and low-salt behavior.
 | --- | --- |
 | **Distance to Salt** | Median-filtered distance from the lid to the salt surface in centimetres. |
 | **Salt Level** | Calibrated and clamped estimate from 0–100%. |
+| **Estimated Days Until Low Salt** | Device-native estimate of when the warning threshold will be reached; unavailable until the trend is trustworthy. |
+| **Forecast Status** | Explains whether the estimate is learning, available, confirming a refill, or blocked. |
 | **Salt Status** | `Initializing`, `Sensor Fault`, `Calibration Required`, `Low Salt`, or `Good`. |
 | **Low Salt** | Problem indicator that includes five percentage points of hysteresis. |
 | **Sensor Fault** | Reports missing, timed-out, invalid, or out-of-range measurements. |
@@ -127,27 +129,34 @@ rules, manual calibration, and low-salt behavior.
 | **Low Salt Threshold** | Persistent warning threshold; default 20%. |
 | **Set Current Distance as Full** | Captures the current filtered distance as full. |
 | **Set Current Distance as Empty** | Captures the current filtered distance as empty. |
+| **Record Salt Refill** | Starts a new forecast cycle after a small or unusual refill that was not detected automatically. |
 | **WiFi Signal** | Standard ESPHome diagnostic signal strength. |
 | **Last Valid Measurement Age** | Diagnostic age of the most recent accepted sensor reading; disabled by default. |
+| **Forecast Confidence** | Optional evidence-quality diagnostic; disabled by default. |
 
 Entity names and identifiers are kept stable so firmware updates do not create
 duplicates in Home Assistant.
 
-## Optional forecast and notifications
+## Forecast
 
-SaltWatch includes two optional Home Assistant additions:
+**Estimated Days Until Low Salt** answers when you are likely to need more salt,
+not merely how much is present today. It is built into SaltWatch: no Home
+Assistant package, YAML editing, helper entities, or restart is needed.
 
-- **Estimated Days Until Low Salt** uses a smoothed 14-day trend to estimate
-  when the configured warning threshold will be reached. It stays unavailable
-  until enough trustworthy history exists or whenever the trend is not usable.
-- **SaltWatch problem and refill notifications** is a blueprint for low salt,
-  sensor faults, calibration problems, recovery, and an optional advance
-  forecast warning.
+SaltWatch learns from up to 28 trustworthy daily values, rejects sparse or noisy
+data, and confirms refill-like rises before starting a new cycle. A first
+estimate normally needs at least seven days and two percentage points of real
+decline. After it learns a completed cycle, that past rate lets the estimate
+resume immediately after future refills while new evidence accumulates. See
+[how forecasting works](docs/forecast.md), including status meanings, refill
+handling, confidence, and limitations.
 
-These run in Home Assistant, where measurement history already belongs; the
-ATOM Lite remains focused on dependable measurement. See
-[Home Assistant forecast and notifications](docs/home-assistant.md) for the
-beginner installation steps and limitations.
+## Notifications
+
+The optional Home Assistant blueprint sends confirmed low-salt, fault,
+calibration, forecast, and recovery messages to a selected notification target.
+It imports through the Home Assistant UI and requires no package or restart.
+See [notification setup](docs/notifications.md).
 
 ## Trustworthy failure behavior
 
@@ -185,8 +194,10 @@ API communication is encrypted after Device Builder adoption.
   care, and the complete hardware test checklist
 - [Calibration and operation](docs/calibration.md) — full/empty calibration,
   manual values, thresholds, hysteresis, and normal use
-- [Home Assistant forecast and notifications](docs/home-assistant.md) — optional
-  days-until-low estimate and notification blueprint
+- [Salt forecast](docs/forecast.md) — built-in learning, refill handling,
+  confidence, statuses, and limitations
+- [Home Assistant notifications](docs/notifications.md) — optional one-click
+  blueprint setup and testing
 - [Technical reference](docs/technical-reference.md) — measurement pipeline,
   failure handling, persistence, status rules, entities, and limitations
 - [Development and validation](docs/development.md) — repository structure,

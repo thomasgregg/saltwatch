@@ -29,9 +29,11 @@ def load_yaml(path: str):
 
 
 def run() -> None:
-    prediction = load_yaml("home-assistant/saltwatch-prediction.yaml")
-    assert isinstance(prediction["sensor"], list)
-    assert isinstance(prediction["template"], list)
+    # Forecasting is device-native; end users must not need a legacy package.
+    assert not Path("home-assistant/saltwatch-prediction.yaml").exists()
+    assert not Path("docs/home-assistant.md").exists()
+    assert Path("docs/forecast.md").exists()
+    assert Path("docs/notifications.md").exists()
 
     blueprint = load_yaml("home-assistant/blueprints/saltwatch-notifications.yaml")
     assert blueprint["blueprint"]["domain"] == "automation"
@@ -46,6 +48,7 @@ def run() -> None:
     assert core["api"]["reboot_timeout"] == "0s"
     assert "auth" not in core["web_server"]
     assert all("password" not in item for item in core["ota"])
+    assert core["time"][0]["platform"] == "homeassistant"
 
     tof = next(item for item in core["sensor"] if item.get("platform") == "vl53l0x")
     assert tof["address"] == 0x29
@@ -64,6 +67,45 @@ def run() -> None:
         "send_first_at": 1,
     }
     assert filters[3]["timeout"]["value"] == {"!lambda": "return NAN;"}
+
+    script_ids = {item["id"] for item in core["script"]}
+    assert {
+        "forecast_reset_learning",
+        "forecast_recalculate_model",
+        "forecast_evaluate",
+        "forecast_finalize_bucket",
+        "forecast_record_refill",
+    } <= script_ids
+
+    sensors = {item.get("name"): item for item in core["sensor"]}
+    assert sensors["Estimated Days Until Low Salt"]["update_interval"] == "never"
+    text_sensors = {item.get("name"): item for item in core["text_sensor"]}
+    assert text_sensors["Forecast Status"]["update_interval"] == "never"
+    assert text_sensors["Forecast Confidence"]["disabled_by_default"] is True
+    buttons = {item.get("name"): item for item in core["button"]}
+    assert "Record Salt Refill" in buttons
+
+    globals_by_id = {item["id"]: item for item in core["globals"]}
+    for persistent_id in (
+        "forecast_daily_levels",
+        "forecast_daily_days",
+        "forecast_daily_count",
+        "forecast_historical_rate",
+        "forecast_historical_variance",
+        "forecast_completed_cycles",
+        "forecast_refill_candidate",
+        "forecast_cycle_low_level",
+    ):
+        assert globals_by_id[persistent_id]["restore_value"] is True
+    assert globals_by_id["forecast_bucket_sum"]["restore_value"] is False
+    assert globals_by_id["forecast_bucket_sample_count"]["restore_value"] is False
+
+    core_text = Path("saltwatch-core.yaml").read_text()
+    assert "forecast_bucket_sample_count) < 36" in core_text
+    assert "forecast_daily_history_size: \"28\"" in core_text
+    assert "forecast_minimum_decline_percent: \"2.0\"" in core_text
+    assert "Discarded inconsistent restored forecast samples" in core_text
+    assert "now.timezone_offset()" in core_text
 
     version = str(core["substitutions"]["project_version"])
     manifest = json.loads(Path("docs/manifest.json").read_text())
