@@ -35,6 +35,11 @@ def run() -> None:
     )
     assert Path("docs/favicon.svg").exists()
 
+    readme = Path("README.md").read_text()
+    assert Path("docs/images/saltwatch-card.png").exists()
+    assert 'src="docs/images/saltwatch-card.png"' in readme
+    assert "https://github.com/thomasgregg/saltwatch-card" in readme
+
     # Forecasting is device-native; end users must not need a legacy package.
     assert not Path("home-assistant/saltwatch-prediction.yaml").exists()
     assert not Path("docs/home-assistant.md").exists()

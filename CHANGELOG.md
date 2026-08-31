@@ -4,7 +4,11 @@ All notable changes to SaltWatch are documented here.
 
 ## Unreleased
 
+## 1.5.1 - 2026-08-31
+
 - Added a dedicated SaltWatch favicon to the browser installer.
+- Added a Home Assistant dashboard preview to the README and identified
+  SaltWatch Card as the preferred dashboard card for SaltWatch.
 
 ## 1.5.0 - 2026-08-29
 

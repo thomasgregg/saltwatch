@@ -19,6 +19,19 @@ SaltWatch explicitly marks failed or outdated measurements as unavailable, so
 an old reading cannot quietly look current after a blocked or disconnected
 sensor.
 
+<p align="center">
+  <a href="https://github.com/thomasgregg/saltwatch-card">
+    <img src="docs/images/saltwatch-card.png" alt="SaltWatch Card showing the current salt level, forecast, health status, and low-salt threshold in Home Assistant" width="100%">
+  </a>
+</p>
+
+**Recommended Home Assistant card:**
+[SaltWatch Card](https://github.com/thomasgregg/saltwatch-card) is the preferred
+dashboard card for SaltWatch. It brings the current level, refill forecast,
+low-salt threshold, and device status together in one clear view. The card is
+available through HACS and includes a graphical editor for straightforward
+dashboard setup.
+
 ## Contents
 
 - [Why SaltWatch](#why-saltwatch)
