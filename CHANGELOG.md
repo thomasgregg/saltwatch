@@ -4,6 +4,13 @@ All notable changes to SaltWatch are documented here.
 
 ## Unreleased
 
+## 2.0.1 - 2026-09-02
+
+- Removed obsolete fixed entity-ID defaults from the notification blueprint;
+  all required entities are now selected explicitly and filtered to ESPHome.
+- Updated the notification setup guide and regression checks for MAC-suffixed
+  SaltWatch entity IDs.
+
 ## 2.0.0 - 2026-09-02
 
 - Added Forecast Details with learning progress and concise explanations for

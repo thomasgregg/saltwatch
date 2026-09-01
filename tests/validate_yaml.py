@@ -50,6 +50,23 @@ def run() -> None:
     assert blueprint["blueprint"]["domain"] == "automation"
     assert blueprint["triggers"]
     assert blueprint["actions"]
+    blueprint_inputs = blueprint["blueprint"]["input"]
+    required_entities = {
+        "low_salt_entity": ("binary_sensor", "problem"),
+        "sensor_fault_entity": ("binary_sensor", "problem"),
+        "calibration_required_entity": ("binary_sensor", "problem"),
+        "salt_level_entity": ("sensor", None),
+        "calibration_details_entity": ("text_sensor", None),
+        "forecast_entity": ("sensor", None),
+    }
+    for input_name, (domain, device_class) in required_entities.items():
+        entity_input = blueprint_inputs[input_name]
+        assert "default" not in entity_input
+        entity_filter = entity_input["selector"]["entity"]["filter"]
+        assert entity_filter["integration"] == "esphome"
+        assert entity_filter["domain"] == domain
+        if device_class is not None:
+            assert entity_filter["device_class"] == device_class
     assert blueprint["trigger_variables"] == {
         "forecast_entity_for_trigger": {"!input": "forecast_entity"},
         "forecast_notice_days_for_trigger": {"!input": "forecast_notice_days"},

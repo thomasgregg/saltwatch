@@ -3,8 +3,7 @@ blueprint:
   description: >-
     Sends clear notifications for low salt, sensor faults, invalid calibration,
     and the device-native days-until-low forecast. Recovery notifications can
-    also be enabled. Select the SaltWatch entities if their IDs differ from the
-    defaults.
+    also be enabled. Select all entities from the same SaltWatch device.
   domain: automation
   author: SaltWatch
   homeassistant:
@@ -19,49 +18,49 @@ blueprint:
             domain: notify
     low_salt_entity:
       name: Low Salt
-      default: binary_sensor.saltwatch_low_salt
       selector:
         entity:
           filter:
+            integration: esphome
             domain: binary_sensor
             device_class: problem
     sensor_fault_entity:
       name: Sensor Fault
-      default: binary_sensor.saltwatch_sensor_fault
       selector:
         entity:
           filter:
+            integration: esphome
             domain: binary_sensor
             device_class: problem
     calibration_required_entity:
       name: Calibration Required
-      default: binary_sensor.saltwatch_calibration_required
       selector:
         entity:
           filter:
+            integration: esphome
             domain: binary_sensor
             device_class: problem
     salt_level_entity:
       name: Salt Level
-      default: sensor.saltwatch_salt_level
       selector:
         entity:
           filter:
+            integration: esphome
             domain: sensor
     calibration_details_entity:
       name: Calibration Details
-      default: text_sensor.saltwatch_calibration_details
       selector:
         entity:
           filter:
+            integration: esphome
             domain: text_sensor
     forecast_entity:
       name: Estimated Days Until Low Salt
       description: Built into SaltWatch firmware; no package is required.
-      default: sensor.saltwatch_estimated_days_until_low_salt
       selector:
         entity:
           filter:
+            integration: esphome
             domain: sensor
     forecast_notice_days:
       name: Forecast warning

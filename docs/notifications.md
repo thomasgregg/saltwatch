@@ -21,8 +21,10 @@ entity about:
 2. Select **Open link**, **Preview Blueprint**, then **Import Blueprint**.
 3. Select **Create automation**.
 4. Choose the phone or other notification target.
-5. Verify the SaltWatch entities. The defaults match standard ESPHome entity
-   IDs.
+5. Select Low Salt, Sensor Fault, Calibration Required, Salt Level, Calibration
+   Details, and Estimated Days Until Low Salt from the same SaltWatch device.
+   These fields are required because every SaltWatch now has a unique
+   MAC-suffixed entity ID.
 6. Choose the forecast warning, problem-confirmation delay, and whether recovery
    messages should be sent.
 7. Save the automation.
