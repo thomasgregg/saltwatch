@@ -4,6 +4,16 @@ All notable changes to SaltWatch are documented here.
 
 ## Unreleased
 
+## 2.0.0 - 2026-09-02
+
+- Added Forecast Details with learning progress and concise explanations for
+  blocked forecasts, including insufficient usage, inconsistent readings, and
+  refill confirmation.
+- Added MAC-suffixed ESPHome node names so multiple SaltWatch devices have
+  unique discovery names, hostnames, and Home Assistant device relationships.
+- Updated installation, forecast, technical, and development documentation for
+  the new diagnostic entity and multi-device naming.
+
 ## 1.5.1 - 2026-08-31
 
 - Added a dedicated SaltWatch favicon to the browser installer.

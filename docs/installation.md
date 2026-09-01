@@ -59,8 +59,9 @@ Assistant installation and adds an encrypted native API key.
 The web UI and both OTA components are part of the shared SaltWatch package, so
 adoption does not require extra OTA/web secrets or copied YAML blocks.
 
-If adoption gives the device a MAC-suffixed name, use that hostname instead of
-`saltwatch.local` when opening the local interface.
+SaltWatch always uses a MAC-suffixed hostname such as
+`saltwatch-a1b2c3.local`. Use the hostname shown by ESPHome when opening the
+local interface.
 
 ## Updates through Device Builder
 
@@ -77,7 +78,8 @@ API is separate and remains protected after adoption.
 
 1. In Device Builder, select **Install → Manual download** and obtain the OTA
    image, normally `firmware.bin` or `firmware.ota.bin`.
-2. Open `http://saltwatch.local/` or the device IP.
+2. Open the MAC-suffixed address shown by ESPHome, such as
+   `http://saltwatch-a1b2c3.local/`, or use the device IP.
 3. Find **OTA Update**.
 4. Select the OTA image and start the upload.
 5. Keep power connected until SaltWatch reboots.
@@ -122,11 +124,14 @@ esphome run saltwatch.yaml --device /dev/ttyUSB0
 ```
 
 On macOS, the serial port commonly resembles `/dev/cu.usbserial-*`. After the
-first flash, a wireless update can use:
+first flash, use the MAC-suffixed hostname shown by ESPHome for a wireless
+update:
 
 ```sh
-esphome run saltwatch.yaml --device saltwatch.local
+esphome run saltwatch.yaml --device saltwatch-a1b2c3.local
 ```
+
+Replace `a1b2c3` with the suffix assigned to your device.
 
 ## Network access warning
 

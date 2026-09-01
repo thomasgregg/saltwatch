@@ -93,6 +93,7 @@ def run() -> None:
     assert "is_number(states(forecast_entity))" in blueprint_text
 
     core = load_yaml("saltwatch-core.yaml")
+    assert core["esphome"]["name_add_mac_suffix"] is True
     assert core["esp32"]["board"] == "m5stack-atom"
     assert core["esp32"]["framework"]["type"] == "esp-idf"
     assert core["i2c"] == {"sda": "GPIO26", "scl": "GPIO32", "scan": True}
@@ -133,6 +134,8 @@ def run() -> None:
     assert sensors["Estimated Days Until Low Salt"]["update_interval"] == "never"
     text_sensors = {item.get("name"): item for item in core["text_sensor"]}
     assert text_sensors["Forecast Status"]["update_interval"] == "never"
+    assert text_sensors["Forecast Details"]["update_interval"] == "never"
+    assert text_sensors["Forecast Details"]["entity_category"] == "diagnostic"
     assert text_sensors["Forecast Confidence"]["disabled_by_default"] is True
     buttons = {item.get("name"): item for item in core["button"]}
     assert "Record Salt Refill" in buttons
@@ -157,6 +160,17 @@ def run() -> None:
     assert "forecast_daily_history_size: \"28\"" in core_text
     assert "forecast_minimum_decline_percent: \"2.0\"" in core_text
     assert "Discarded inconsistent restored forecast samples" in core_text
+    for detail in (
+        "Starting forecast",
+        "Waiting for valid readings",
+        "Waiting for first reading",
+        "Waiting for date and time",
+        "days collected",
+        "Not enough salt usage yet",
+        "Readings are too inconsistent",
+        "Checking possible refill",
+    ):
+        assert detail in core_text
     assert "now.timezone_offset()" in core_text
 
     version = str(core["substitutions"]["project_version"])

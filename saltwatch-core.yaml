@@ -1,5 +1,5 @@
 substitutions:
-  project_version: "1.5.1"
+  project_version: "2.0.0"
   sensor_min_cm: "5.0"
   sensor_max_cm: "120.0"
   minimum_calibration_span_cm: "10.0"
@@ -17,7 +17,7 @@ substitutions:
 esphome:
   name: saltwatch
   friendly_name: SaltWatch
-  name_add_mac_suffix: false
+  name_add_mac_suffix: true
   project:
     name: saltwatch.salt-monitor
     version: "${project_version}"
@@ -507,6 +507,7 @@ script:
       - lambda: |-
           float days_remaining = NAN;
           std::string status;
+          std::string details;
           std::string confidence = "Unavailable";
 
           const bool sensor_fault_active =
@@ -520,21 +521,27 @@ script:
           if (id(salt_status).has_state() &&
               id(salt_status).state == "Initializing") {
             status = "Initializing";
+            details = "Starting forecast";
           } else if (sensor_fault_active) {
             status = "Sensor Fault";
+            details = "Waiting for valid readings";
           } else if (calibration_required_active) {
             status = "Calibration Required";
+            details = "Calibration required";
           } else if (!level_valid) {
             status = "Waiting for Measurement";
+            details = "Waiting for first reading";
           } else {
             const float level = id(salt_level).state;
             const float threshold = id(low_salt_threshold).state;
             if (level <= threshold) {
               days_remaining = 0.0f;
               status = "Low Salt";
+              details = "Low threshold reached";
               confidence = "Not Applicable";
             } else if (id(forecast_refill_candidate)) {
               status = "Confirming Refill";
+              details = "Checking possible refill";
             } else {
               const bool historical_valid =
                   id(forecast_historical_rate) >=
@@ -559,6 +566,14 @@ script:
                 days_remaining =
                     ceilf((level - threshold) / effective_rate);
                 status = "Available";
+                if (current_valid) {
+                  const int evidence_days = std::max(
+                      0, static_cast<int>(lroundf(id(forecast_current_days))));
+                  details = "Based on " + std::to_string(evidence_days) +
+                            " days of data";
+                } else {
+                  details = "Based on previous refill cycle";
+                }
 
                 const float historical_cv =
                     historical_valid && id(forecast_historical_rate) > 0.0f
@@ -585,10 +600,19 @@ script:
                          id(forecast_current_days) >=
                              ${forecast_minimum_days}) {
                 status = "Insufficient Change";
+                details = id(forecast_current_mad) >
+                                  ${forecast_maximum_mad_percent}
+                              ? "Readings are too inconsistent"
+                              : "Not enough salt usage yet";
               } else if (!id(homeassistant_time).now().is_valid()) {
                 status = "Waiting for Time";
+                details = "Waiting for date and time";
               } else {
                 status = "Learning";
+                const int collected_days = std::max(
+                    0, std::min(id(forecast_daily_count), 7));
+                details = std::to_string(collected_days) +
+                          " of 7 days collected";
               }
             }
           }
@@ -608,6 +632,10 @@ script:
           if (!id(forecast_status).has_state() ||
               id(forecast_status).state != status) {
             id(forecast_status).publish_state(status);
+          }
+          if (!id(forecast_details).has_state() ||
+              id(forecast_details).state != details) {
+            id(forecast_details).publish_state(details);
           }
           if (!id(forecast_confidence).has_state() ||
               id(forecast_confidence).state != confidence) {
@@ -1409,6 +1437,13 @@ text_sensor:
     name: "Forecast Status"
     id: forecast_status
     icon: mdi:chart-timeline-variant
+    update_interval: never
+
+  - platform: template
+    name: "Forecast Details"
+    id: forecast_details
+    icon: mdi:information-outline
+    entity_category: diagnostic
     update_interval: never
 
   - platform: template

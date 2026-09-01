@@ -132,6 +132,7 @@ rules, manual calibration, and low-salt behavior.
 | **Salt Level** | Calibrated and clamped estimate from 0–100%. |
 | **Estimated Days Until Low Salt** | Device-native estimate of when the warning threshold will be reached; unavailable until the trend is trustworthy. |
 | **Forecast Status** | Explains whether the estimate is learning, available, confirming a refill, or blocked. |
+| **Forecast Details** | Gives a short reason or learning-progress message when the estimate is not yet available. |
 | **Salt Status** | `Initializing`, `Sensor Fault`, `Calibration Required`, `Low Salt`, or `Good`. |
 | **Low Salt** | Problem indicator that includes five percentage points of hysteresis. |
 | **Sensor Fault** | Reports missing, timed-out, invalid, or out-of-range measurements. |
@@ -149,6 +150,12 @@ rules, manual calibration, and low-salt behavior.
 
 Entity names and identifiers are kept stable so firmware updates do not create
 duplicates in Home Assistant.
+
+Every SaltWatch node automatically appends the final three bytes of its MAC
+address to its technical ESPHome name, for example `saltwatch-a1b2c3`. This
+keeps discovery, hostnames, and Home Assistant device relationships unique when
+more than one SaltWatch is installed. The Home Assistant device can still be
+renamed to a friendly location such as **SaltWatch Utility Room**.
 
 ## Forecast
 
@@ -188,10 +195,11 @@ design is documented in the [technical reference](docs/technical-reference.md).
 
 ## Local web interface and updates
 
-After Wi-Fi provisioning, open `http://saltwatch.local/` or the device IP. The
-local interface shows the SaltWatch entities, supports calibration controls,
-and accepts manual OTA firmware uploads. ESPHome Device Builder can also install
-updates wirelessly.
+After Wi-Fi provisioning, open the MAC-suffixed address shown by ESPHome, such
+as `http://saltwatch-a1b2c3.local/`, or use the device IP. The local interface
+shows the SaltWatch entities, supports calibration controls, and accepts manual
+OTA firmware uploads. ESPHome Device Builder can also install updates
+wirelessly.
 
 The web interface and both OTA paths intentionally have no password. Anyone who
 can reach the device can change calibration or replace its firmware. Keep

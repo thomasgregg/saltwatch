@@ -83,18 +83,24 @@ Salt Level, sensor health, and calibration are all valid.
 
 ## Forecast Status reference
 
-| State | Meaning |
-| --- | --- |
-| `Initializing` | SaltWatch is still waiting for its first valid measurement. |
-| `Sensor Fault` | Forecast is unavailable because measurement is not trustworthy. |
-| `Calibration Required` | Complete or correct calibration first. |
-| `Waiting for Measurement` | A current valid Salt Level is not available. |
-| `Waiting for Time` | Home Assistant has not yet supplied a valid clock and no learned model can be used. |
-| `Learning` | More trustworthy daily evidence is required. |
-| `Insufficient Change` | Enough time exists, but the decline is too small or inconsistent to forecast responsibly. |
-| `Confirming Refill` | A possible refill is awaiting a second six-hour value. |
-| `Available` | Estimated Days Until Low Salt is published. |
-| `Low Salt` | The threshold has been reached; the estimate is 0 days. |
+| State | Meaning | Forecast Details example |
+| --- | --- | --- |
+| `Initializing` | SaltWatch is still waiting for its first valid measurement. | `Starting forecast` |
+| `Sensor Fault` | Forecast is unavailable because measurement is not trustworthy. | `Waiting for valid readings` |
+| `Calibration Required` | Complete or correct calibration first. | `Calibration required` |
+| `Waiting for Measurement` | A current valid Salt Level is not available. | `Waiting for first reading` |
+| `Waiting for Time` | Home Assistant has not yet supplied a valid clock and no learned model can be used. | `Waiting for date and time` |
+| `Learning` | More trustworthy daily evidence is required. | `4 of 7 days collected` |
+| `Insufficient Change` | Enough time exists, but the decline is too small or inconsistent to forecast responsibly. | `Not enough salt usage yet` or `Readings are too inconsistent` |
+| `Confirming Refill` | A possible refill is awaiting a second six-hour value. | `Checking possible refill` |
+| `Available` | Estimated Days Until Low Salt is published. | `Based on 18 days of data` or `Based on previous refill cycle` |
+| `Low Salt` | The threshold has been reached; the estimate is 0 days. | `Low threshold reached` |
+
+**Forecast Details** adds a short explanation for the current state. During
+learning it reports progress such as `4 of 7 days collected`; it also
+distinguishes insufficient salt usage from readings that are too inconsistent.
+SaltWatch Card displays this explanation only while the numeric forecast is
+unavailable, keeping the normal available state uncluttered.
 
 Any sensor fault, invalid calibration, missing current level, or pending refill
 confirmation makes the numeric estimate unavailable. Changing Full Distance or

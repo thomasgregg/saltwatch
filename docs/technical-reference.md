@@ -14,7 +14,7 @@ lambdas and watchdog scripts; it does not use a custom C++ component.
 | Node name | `saltwatch` |
 | Friendly name | `SaltWatch` |
 | ESPHome project | `saltwatch.salt-monitor` |
-| Release | 1.5.1 |
+| Release | 2.0.0 |
 | Board | `m5stack-atom` |
 | Framework | ESP-IDF |
 | I²C | SDA GPIO26, SCL GPIO32 |
@@ -159,6 +159,7 @@ higher-priority problem is active.
 | Salt Status | Text sensor | Derived priority state. |
 | Calibration Details | Diagnostic text sensor | Exact missing or invalid calibration reason, or `Valid`. |
 | Forecast Status | Text sensor | Explains forecast availability and learning state. |
+| Forecast Details | Diagnostic text sensor | Gives concise forecast learning progress or the current blocking reason. |
 | Forecast Confidence | Diagnostic text sensor | Low/Medium/High evidence quality; disabled by default. |
 | WiFi Signal | Diagnostic sensor | Standard ESPHome Wi-Fi RSSI. |
 | Last Valid Measurement Age | Diagnostic sensor, s | Monotonic age of the most recent accepted raw reading; disabled by default to avoid unnecessary history. |
