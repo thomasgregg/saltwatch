@@ -165,6 +165,10 @@ def run() -> None:
     assert manifest["builds"][0]["parts"][0]["path"] == (
         f"saltwatch-{version}.factory.bin"
     )
+    assert f"| Release | {version} |" in Path(
+        "docs/technical-reference.md"
+    ).read_text()
+    assert f"Installer firmware {version}" in installer_html
 
     print("SaltWatch YAML and release metadata checks passed")
 
