@@ -4,6 +4,16 @@ All notable changes to SaltWatch are documented here.
 
 ## Unreleased
 
+## 2.0.2 - 2026-09-02
+
+- Added a hardware-free ESPHome host emulator for testing SaltWatch and
+  SaltWatch Card without a physical sensor.
+- Added adjustable emulator controls for salt level, device status, forecast
+  days, forecast status, and forecast details, including unavailable-state
+  testing.
+- Documented local emulator setup and added automated validation and compilation
+  to continuous integration.
+
 ## 2.0.1 - 2026-09-02
 
 - Removed obsolete fixed entity-ID defaults from the notification blueprint;

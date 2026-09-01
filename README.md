@@ -39,6 +39,7 @@ dashboard setup.
 - [Quick start](#quick-start)
 - [Calibration](#calibration)
 - [Home Assistant entities](#home-assistant-entities)
+- [Testing without hardware](#testing-without-hardware)
 - [Forecast](#forecast)
 - [Notifications](#notifications)
 - [Trustworthy failure behavior](#trustworthy-failure-behavior)
@@ -156,6 +157,31 @@ address to its technical ESPHome name, for example `saltwatch-a1b2c3`. This
 keeps discovery, hostnames, and Home Assistant device relationships unique when
 more than one SaltWatch is installed. The Home Assistant device can still be
 renamed to a friendly location such as **SaltWatch Utility Room**.
+
+## Testing without hardware
+
+`saltwatch-emulator.yaml` creates a complete virtual SaltWatch device on a
+macOS or Linux computer. It uses ESPHome's host platform, so the SaltWatch Card
+sees the same device relationship, ESPHome entity metadata, and stable original
+entity names as it would with the physical monitor.
+
+From a local checkout with ESPHome installed, run:
+
+```sh
+esphome run saltwatch-emulator.yaml
+```
+
+In Home Assistant, open **Settings → Devices & services → Add integration →
+ESPHome**, enter the computer's LAN address, and keep the default API port
+`6053`. Host-based ESPHome nodes are not discovered automatically. The local
+firewall must allow Home Assistant to reach that port.
+
+The resulting **SaltWatch Emulator** device provides controls for salt level,
+salt status, forecast days, forecast status, forecast details, and the low-salt
+threshold. Set either simulated numeric value to `-1` to make its corresponding
+sensor unavailable and test fault, calibration, initialization, or forecast
+learning displays. The emulator remains available only while its process is
+running and should be used on a trusted development network.
 
 ## Forecast
 

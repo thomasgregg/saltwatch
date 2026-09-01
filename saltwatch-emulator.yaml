@@ -1,0 +1,151 @@
+esphome:
+  name: saltwatch-emulator
+  friendly_name: SaltWatch Emulator
+  project:
+    name: saltwatch.salt-monitor
+    version: "emulator"
+
+# Runs as a native process on macOS or Linux; no SaltWatch hardware is needed.
+host:
+  mac_address: "06:53:41:4c:54:01"
+
+logger:
+
+api:
+  reboot_timeout: 0s
+
+number:
+  - platform: template
+    name: "Simulated Salt Level"
+    id: simulated_salt_level
+    entity_category: config
+    unit_of_measurement: "%"
+    min_value: -1
+    max_value: 100
+    step: 1
+    initial_value: 58
+    restore_value: true
+    optimistic: true
+
+  - platform: template
+    name: "Low Salt Threshold"
+    id: low_salt_threshold
+    entity_category: config
+    unit_of_measurement: "%"
+    min_value: 5
+    max_value: 50
+    step: 1
+    initial_value: 20
+    restore_value: true
+    optimistic: true
+
+  - platform: template
+    name: "Simulated Forecast Days"
+    id: simulated_forecast_days
+    entity_category: config
+    unit_of_measurement: "d"
+    min_value: -1
+    max_value: 365
+    step: 1
+    initial_value: 52
+    restore_value: true
+    optimistic: true
+
+select:
+  - platform: template
+    name: "Simulated Salt Status"
+    id: simulated_salt_status
+    entity_category: config
+    optimistic: true
+    restore_value: true
+    initial_option: "Good"
+    options:
+      - "Initializing"
+      - "Sensor Fault"
+      - "Calibration Required"
+      - "Low Salt"
+      - "Good"
+
+  - platform: template
+    name: "Simulated Forecast Status"
+    id: simulated_forecast_status
+    entity_category: config
+    optimistic: true
+    restore_value: true
+    initial_option: "Available"
+    options:
+      - "Initializing"
+      - "Sensor Fault"
+      - "Calibration Required"
+      - "Waiting for Measurement"
+      - "Low Salt"
+      - "Confirming Refill"
+      - "Available"
+      - "Insufficient Change"
+      - "Waiting for Time"
+      - "Learning"
+
+  - platform: template
+    name: "Simulated Forecast Details"
+    id: simulated_forecast_details
+    entity_category: config
+    optimistic: true
+    restore_value: true
+    initial_option: "Based on 18 days of data"
+    options:
+      - "Starting forecast"
+      - "Waiting for valid readings"
+      - "Waiting for first reading"
+      - "Waiting for date and time"
+      - "4 of 7 days collected"
+      - "Not enough salt usage yet"
+      - "Readings are too inconsistent"
+      - "Checking possible refill"
+      - "Based on 18 days of data"
+
+sensor:
+  - platform: template
+    name: "Salt Level"
+    id: salt_level
+    unit_of_measurement: "%"
+    state_class: measurement
+    accuracy_decimals: 0
+    update_interval: 1s
+    lambda: |-
+      const float value = id(simulated_salt_level).state;
+      return value < 0 ? NAN : value;
+
+  - platform: template
+    name: "Estimated Days Until Low Salt"
+    id: estimated_days_until_low_salt
+    icon: mdi:calendar-clock
+    unit_of_measurement: "d"
+    device_class: duration
+    state_class: measurement
+    accuracy_decimals: 0
+    update_interval: 1s
+    lambda: |-
+      const float value = id(simulated_forecast_days).state;
+      return value < 0 ? NAN : value;
+
+text_sensor:
+  - platform: template
+    name: "Salt Status"
+    id: salt_status
+    update_interval: 1s
+    lambda: return {id(simulated_salt_status).current_option().str()};
+
+  - platform: template
+    name: "Forecast Status"
+    id: forecast_status
+    icon: mdi:chart-timeline-variant
+    update_interval: 1s
+    lambda: return {id(simulated_forecast_status).current_option().str()};
+
+  - platform: template
+    name: "Forecast Details"
+    id: forecast_details
+    icon: mdi:information-outline
+    entity_category: diagnostic
+    update_interval: 1s
+    lambda: return {id(simulated_forecast_details).current_option().str()};

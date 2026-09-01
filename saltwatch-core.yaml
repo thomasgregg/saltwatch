@@ -1,5 +1,5 @@
 substitutions:
-  project_version: "2.0.1"
+  project_version: "2.0.2"
   sensor_min_cm: "5.0"
   sensor_max_cm: "120.0"
   minimum_calibration_span_cm: "10.0"

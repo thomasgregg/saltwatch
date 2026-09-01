@@ -9,6 +9,7 @@
 | `saltwatch-core.yaml` | Shared, credential-free hardware and monitoring configuration. |
 | `saltwatch.yaml` | Production entry point with Wi-Fi credentials and encrypted API key. |
 | `saltwatch-webinstall.yaml` | Credential-free browser-installer build and adoption metadata. |
+| `saltwatch-emulator.yaml` | Hardware-free ESPHome host device for Home Assistant and card testing. |
 | `secrets.yaml.example` | Required secret names for manual production builds. |
 | `docs/index.html` | ESP Web Tools installer page. |
 | `docs/manifest.json` | Versioned ESP Web Tools manifest. |
@@ -48,7 +49,7 @@ web interface intentionally do not have credentials.
 
 ## ESPHome version
 
-SaltWatch 2.0.1 is validated with:
+SaltWatch 2.0.2 is validated with:
 
 - ESPHome 2026.8.1
 - ESP-IDF 5.5.5
@@ -72,9 +73,16 @@ esphome config saltwatch.yaml
 esphome compile saltwatch.yaml
 esphome config saltwatch-webinstall.yaml
 esphome compile saltwatch-webinstall.yaml
+esphome config saltwatch-emulator.yaml
+esphome compile saltwatch-emulator.yaml
 python3 tests/test_logic.py
 python3 tests/validate_yaml.py
 ```
+
+Run the emulator interactively with `esphome run saltwatch-emulator.yaml`, then
+add the ESPHome integration manually in Home Assistant using the development
+computer's LAN address and API port `6053`. The process exposes adjustable test
+controls and must remain running while Home Assistant uses the virtual device.
 
 The production build creates:
 
@@ -105,19 +113,19 @@ rg -n "web_server|reboot_timeout|api:|ota:|password:" \
 The published browser image is scanned for validation credentials, checked for
 the ESP32 image header, and hashed before and after GitHub Pages deployment.
 
-## Current v2.0.1 build results
+## Current v2.0.2 build results
 
 | Build | RAM | Application flash | Result |
 | --- | ---: | ---: | --- |
 | Production | 27.5% | 49.2% | Passed |
-| Browser installer | 27.6% | 49.7% | Passed |
+| Browser installer | 27.6% | 49.8% | Passed |
 
-The v2.0.1 hosted factory image is generated and verified as part of the
+The v2.0.2 hosted factory image is generated and verified as part of the
 release process. Its final size and SHA-256 are recorded below:
 
 ```text
 Size: 979,280 bytes
-SHA-256: 89de0fe09f8beb43446a7192f66a799b35dea4e6e12649e6173b0e40edf84f44
+SHA-256: ed5d5d15db9f78dc1a62c3391bc7695db04cfb8164d6f396fd91bd428dba9f03
 ```
 
 ## Configuration audit expectations

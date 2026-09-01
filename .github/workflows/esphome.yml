@@ -38,3 +38,9 @@ jobs:
 
       - name: Compile web-installer firmware
         run: esphome compile saltwatch-webinstall.yaml
+
+      - name: Validate hardware-free emulator
+        run: esphome config saltwatch-emulator.yaml
+
+      - name: Compile hardware-free emulator
+        run: esphome compile saltwatch-emulator.yaml

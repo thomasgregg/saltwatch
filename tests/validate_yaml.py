@@ -120,6 +120,39 @@ def run() -> None:
     assert all("password" not in item for item in core["ota"])
     assert core["time"][0]["platform"] == "homeassistant"
 
+    emulator = load_yaml("saltwatch-emulator.yaml")
+    assert emulator["esphome"]["project"] == {
+        "name": "saltwatch.salt-monitor",
+        "version": "emulator",
+    }
+    assert emulator["host"]["mac_address"] == "06:53:41:4c:54:01"
+    assert emulator["api"]["reboot_timeout"] == "0s"
+    emulator_entities = {
+        item["name"]
+        for domain in ("number", "sensor", "text_sensor")
+        for item in emulator[domain]
+    }
+    assert {
+        "Salt Level",
+        "Salt Status",
+        "Low Salt Threshold",
+        "Estimated Days Until Low Salt",
+        "Forecast Status",
+        "Forecast Details",
+    } <= emulator_entities
+    emulator_controls = {
+        item["name"]
+        for domain in ("number", "select")
+        for item in emulator[domain]
+    }
+    assert {
+        "Simulated Salt Level",
+        "Simulated Salt Status",
+        "Simulated Forecast Days",
+        "Simulated Forecast Status",
+        "Simulated Forecast Details",
+    } <= emulator_controls
+
     tof = next(item for item in core["sensor"] if item.get("platform") == "vl53l0x")
     assert tof["address"] == 0x29
     assert tof["long_range"] is True
