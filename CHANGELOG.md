@@ -4,6 +4,16 @@ All notable changes to SaltWatch are documented here.
 
 ## Unreleased
 
+## 2.1.0 - 2026-09-02
+
+- Added a persistent Last Recorded Refill timestamp for automatically confirmed
+  and manually recorded refills.
+- Kept refill recording and forecast-cycle transitions operational while the
+  Home Assistant clock is unavailable; the pending timestamp is completed at
+  the next successful synchronization.
+- Documented refill timestamp semantics, confirmation timing, persistence, and
+  failure behavior.
+
 ## 2.0.2 - 2026-09-02
 
 - Added a hardware-free ESPHome host emulator for testing SaltWatch and

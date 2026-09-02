@@ -127,4 +127,5 @@ from that rate immediately after confirmation while the new cycle starts.
 For a small top-up that does not raise Salt Level by roughly eight percentage
 points, wait for the measurement to settle and press **Record Salt Refill**.
 Do not press it when no salt was added: it deliberately closes the current
-forecast cycle. See the [forecast guide](forecast.md) for full behavior.
+forecast cycle and updates **Last Recorded Refill**. See the
+[forecast guide](forecast.md) for full behavior.

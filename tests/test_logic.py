@@ -171,6 +171,17 @@ class RefillDetector:
         self.recent = (self.recent + [level])[-4:]
 
 
+def refill_timestamp(stored: int, refill_accepted: bool, now: int | None) -> int:
+    """Model the persisted no-value/pending/recorded timestamp states."""
+    if refill_accepted:
+        stored = -1
+    if stored == -1 and now is not None:
+        stored = now
+    if stored == 0 or stored == -1:
+        return stored
+    return stored if 946_684_800 <= stored <= 4_102_444_800 else 0
+
+
 def run() -> None:
     calibration_cases = [
         ((6.3, 16.3, True, True), True),
@@ -238,6 +249,15 @@ def run() -> None:
     assert detector.add(49.0) == "candidate"
     assert detector.add(48.0) == "confirmed"
     assert detector.refills == 1
+
+    previous_refill = 1_788_000_000
+    new_refill = 1_788_100_000
+    assert refill_timestamp(0, False, new_refill) == 0
+    assert refill_timestamp(previous_refill, False, new_refill) == previous_refill
+    assert refill_timestamp(previous_refill, True, new_refill) == new_refill
+    assert refill_timestamp(previous_refill, True, None) == -1
+    assert refill_timestamp(-1, False, new_refill) == new_refill
+    assert refill_timestamp(123, False, new_refill) == 0
 
     assert forecast_output(60, 20, 1, initializing=True) == ("Initializing", None)
     assert forecast_output(60, 20, 1, fault=True) == ("Sensor Fault", None)

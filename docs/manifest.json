@@ -1,6 +1,6 @@
 {
   "name": "SaltWatch",
-  "version": "2.0.2",
+  "version": "2.1.0",
   "home_assistant_domain": "esphome",
   "new_install_prompt_erase": true,
   "builds": [
@@ -8,7 +8,7 @@
       "chipFamily": "ESP32",
       "parts": [
         {
-          "path": "saltwatch-2.0.2.factory.bin",
+          "path": "saltwatch-2.1.0.factory.bin",
           "offset": 0
         }
       ]

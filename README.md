@@ -134,6 +134,7 @@ rules, manual calibration, and low-salt behavior.
 | **Estimated Days Until Low Salt** | Device-native estimate of when the warning threshold will be reached; unavailable until the trend is trustworthy. |
 | **Forecast Status** | Explains whether the estimate is learning, available, confirming a refill, or blocked. |
 | **Forecast Details** | Gives a short reason or learning-progress message when the estimate is not yet available. |
+| **Last Recorded Refill** | Timestamp of the most recent automatically confirmed or manually recorded refill; unavailable until the first refill is recorded. |
 | **Salt Status** | `Initializing`, `Sensor Fault`, `Calibration Required`, `Low Salt`, or `Good`. |
 | **Low Salt** | Problem indicator that includes five percentage points of hysteresis. |
 | **Sensor Fault** | Reports missing, timed-out, invalid, or out-of-range measurements. |
@@ -196,6 +197,15 @@ decline. After it learns a completed cycle, that past rate lets the estimate
 resume immediately after future refills while new evidence accumulates. See
 [how forecasting works](docs/forecast.md), including status meanings, refill
 handling, confidence, and limitations.
+
+**Last Recorded Refill** remembers when SaltWatch most recently started a new
+forecast cycle because a refill was confirmed automatically or the **Record
+Salt Refill** button was accepted. It is informational only and never changes
+the forecast calculation. A possible refill does not update the timestamp
+until its second six-hour value confirms the rise. If Home Assistant time is
+temporarily unavailable during a manual refill, the forecast cycle still
+starts immediately and the timestamp is completed at the next successful time
+synchronization.
 
 ## Notifications
 

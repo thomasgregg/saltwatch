@@ -15,6 +15,8 @@ restart to perform.
   confirming a refill, or blocked by measurement/calibration.
 - **Record Salt Refill** — tells the predictor about a small or unusual refill
   that automatic detection may not recognize.
+- **Last Recorded Refill** — remembers the latest automatically confirmed or
+  manually recorded refill.
 - **Forecast Confidence** — an optional diagnostic entity, disabled by default.
 
 The forecast targets the warning threshold, not physical empty. If Salt Level
@@ -68,6 +70,12 @@ confirmation is pending:
   one calendar day later, rather than remaining in `Confirming Refill`
   indefinitely.
 
+Only a confirmed candidate updates **Last Recorded Refill**. The initial rise,
+an expired candidate, or a rise rejected as temporary surface movement leaves
+the previous timestamp untouched. The recorded time is the confirmation time,
+because that is when SaltWatch has enough evidence to classify the change as a
+refill.
+
 When the previous cycle contained a trustworthy trend, SaltWatch learns that
 rate before resetting the current cycle. The post-refill forecast can therefore
 resume immediately from learned past consumption instead of disappearing for
@@ -80,6 +88,17 @@ adding a small amount of salt, wait for Salt Level to settle and press **Record
 Salt Refill**. The button preserves any trustworthy completed-cycle rate and
 starts clean current-cycle learning. It refuses the action unless the current
 Salt Level, sensor health, and calibration are all valid.
+
+An accepted manual action also updates **Last Recorded Refill**. If Home
+Assistant has not yet supplied a valid clock, recording the refill and starting
+the new forecast cycle still succeed. The timestamp remains unavailable until
+the next successful clock synchronization and is then set to that synchronization
+time. Rejected button actions do not change the timestamp.
+
+The timestamp is stored across normal restarts and firmware updates. It is not
+cleared by calibration or low-threshold changes because it describes a recorded
+physical event rather than forecast training data. It does not participate in
+refill detection, trend learning, confidence, or the estimated-days calculation.
 
 ## Forecast Status reference
 

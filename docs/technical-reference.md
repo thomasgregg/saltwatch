@@ -14,7 +14,7 @@ lambdas and watchdog scripts; it does not use a custom C++ component.
 | Node name | `saltwatch` |
 | Friendly name | `SaltWatch` |
 | ESPHome project | `saltwatch.salt-monitor` |
-| Release | 2.0.2 |
+| Release | 2.1.0 |
 | Board | `m5stack-atom` |
 | Framework | ESP-IDF |
 | I²C | SDA GPIO26, SCL GPIO32 |
@@ -147,6 +147,7 @@ higher-priority problem is active.
 | Distance to Salt | Sensor, cm | One decimal, measurement state class, five-valid-sample median, unavailable after timeout. |
 | Salt Level | Sensor, % | One decimal, measurement state class, clamped 0–100%, unavailable outside valid operating conditions. |
 | Estimated Days Until Low Salt | Sensor, days | Device-native threshold forecast; unavailable unless its inputs and learned rate are trustworthy. |
+| Last Recorded Refill | Timestamp sensor | Most recent automatically confirmed or manually recorded refill; persistent and unavailable before the first recorded event. |
 | Full Distance | Number, cm | 5–120 cm, 0.1 cm steps, persistent; editing completes full calibration. |
 | Empty Distance | Number, cm | 5–120 cm, 0.1 cm steps, persistent; editing completes empty calibration. |
 | Low Salt Threshold | Number, % | 5–50%, whole-percent steps, persistent, default 20%. |
@@ -199,6 +200,14 @@ the baseline. An unconfirmed candidate is excluded from the daily trend. A
 confirmed cycle's trustworthy rate is retained as exponentially weighted
 historical evidence and blended with the new cycle; changing either calibration
 point clears all learned rates and aggregates.
+
+Automatic confirmation and an accepted **Record Salt Refill** action also set
+the persistent **Last Recorded Refill** timestamp. Zero represents no recorded
+refill and `-1` represents an accepted refill waiting for Home Assistant time.
+The pending state survives restart and resolves on the next time synchronization.
+Invalid restored timestamps are discarded independently of all forecast data.
+The timestamp is an output of the refill transition and is never an input to
+detection, learning, confidence, or forecast availability.
 
 Forecast output is forced unavailable during initialization, Sensor Fault,
 Calibration Required, missing Salt Level, or refill confirmation. Low Salt

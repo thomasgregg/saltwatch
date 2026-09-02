@@ -182,6 +182,15 @@ def run() -> None:
 
     sensors = {item.get("name"): item for item in core["sensor"]}
     assert sensors["Estimated Days Until Low Salt"]["update_interval"] == "never"
+    assert sensors["Last Recorded Refill"] == {
+        "platform": "template",
+        "name": "Last Recorded Refill",
+        "id": "last_recorded_refill",
+        "icon": "mdi:calendar-refresh",
+        "device_class": "timestamp",
+        "accuracy_decimals": 0,
+        "update_interval": "never",
+    }
     text_sensors = {item.get("name"): item for item in core["text_sensor"]}
     assert text_sensors["Forecast Status"]["update_interval"] == "never"
     assert text_sensors["Forecast Details"]["update_interval"] == "never"
@@ -200,6 +209,7 @@ def run() -> None:
         "forecast_completed_cycles",
         "forecast_refill_candidate",
         "forecast_cycle_low_level",
+        "last_recorded_refill_timestamp",
     ):
         assert globals_by_id[persistent_id]["restore_value"] is True
     assert globals_by_id["forecast_bucket_sum"]["restore_value"] is False
@@ -210,6 +220,11 @@ def run() -> None:
     assert "forecast_daily_history_size: \"28\"" in core_text
     assert "forecast_minimum_decline_percent: \"2.0\"" in core_text
     assert "Discarded inconsistent restored forecast samples" in core_text
+    assert "Discarded invalid restored refill timestamp" in core_text
+    assert core_text.count("id(last_recorded_refill_timestamp) = -1;") == 2
+    assert "on_time_sync" in core["time"][0]
+    assert "Last Recorded Refill" in readme
+    assert "Last Recorded Refill" in Path("docs/forecast.md").read_text()
     for detail in (
         "Starting forecast",
         "Waiting for valid readings",

@@ -1,5 +1,5 @@
 substitutions:
-  project_version: "2.0.2"
+  project_version: "2.1.0"
   sensor_min_cm: "5.0"
   sensor_max_cm: "120.0"
   minimum_calibration_span_cm: "10.0"
@@ -37,6 +37,7 @@ esphome:
             }
         - script.execute: forecast_recalculate_model
         - script.wait: forecast_recalculate_model
+        - script.execute: forecast_publish_refill_timestamp
         - script.execute: evaluate_state
 
 esp32:
@@ -95,6 +96,9 @@ time:
         hours: "0,6,12,18"
         then:
           - script.execute: forecast_finalize_bucket
+    on_time_sync:
+      then:
+        - script.execute: forecast_publish_refill_timestamp
 
 globals:
   - id: full_calibration_completed
@@ -230,6 +234,19 @@ globals:
     restore_value: true
     initial_value: "0"
 
+  # Zero means that no refill has been recorded. Minus one means a refill was
+  # accepted while the Home Assistant clock was unavailable and should be
+  # timestamped at the next successful time synchronization.
+  - id: last_recorded_refill_timestamp
+    type: int64_t
+    restore_value: true
+    initial_value: "0"
+
+  - id: refill_timestamp_publish_requested
+    type: bool
+    restore_value: false
+    initial_value: "false"
+
   - id: forecast_calibration_full_tenths
     type: int
     restore_value: true
@@ -288,6 +305,46 @@ globals:
     initial_value: "false"
 
 script:
+  - id: forecast_publish_refill_timestamp
+    mode: restart
+    then:
+      - lambda: |-
+          constexpr int64_t earliest_sane_timestamp = 946684800LL;   // 2000-01-01
+          constexpr int64_t latest_sane_timestamp = 4102444800LL;   // 2100-01-01
+
+          int64_t stored = id(last_recorded_refill_timestamp);
+          if (stored == -1) {
+            const auto now = id(homeassistant_time).now();
+            if (!now.is_valid()) {
+              id(last_recorded_refill).publish_state(NAN);
+              ESP_LOGW("forecast",
+                       "Refill accepted; timestamp waiting for Home Assistant time");
+              return;
+            }
+            stored = static_cast<int64_t>(now.timestamp);
+            id(last_recorded_refill_timestamp) = stored;
+            ESP_LOGI("forecast", "Recorded refill timestamp");
+          }
+
+          if (stored == 0) {
+            id(last_recorded_refill).publish_state(NAN);
+            return;
+          }
+          if (stored < earliest_sane_timestamp ||
+              stored > latest_sane_timestamp) {
+            ESP_LOGW("forecast", "Discarded invalid restored refill timestamp");
+            id(last_recorded_refill_timestamp) = 0;
+            id(last_recorded_refill).publish_state(NAN);
+            return;
+          }
+
+          const float published = static_cast<float>(stored);
+          if (!id(last_recorded_refill).has_state() ||
+              !std::isfinite(id(last_recorded_refill).state) ||
+              id(last_recorded_refill).state != published) {
+            id(last_recorded_refill).publish_state(published);
+          }
+
   - id: forecast_reset_learning
     mode: restart
     then:
@@ -789,6 +846,8 @@ script:
                   id(forecast_refill_candidate_level), bucket_level);
               id(forecast_refill_candidate) = false;
               id(forecast_refill_candidate_day) = -1;
+              id(last_recorded_refill_timestamp) = -1;
+              id(refill_timestamp_publish_requested) = true;
               ESP_LOGI("forecast",
                        "Salt refill confirmed automatically at %.1f%%",
                        bucket_level);
@@ -894,6 +953,12 @@ script:
             id(forecast_day_bucket_count) = 0;
             id(forecast_day_key) = -1;
           }
+      - if:
+          condition:
+            lambda: return id(refill_timestamp_publish_requested);
+          then:
+            - lambda: id(refill_timestamp_publish_requested) = false;
+            - script.execute: forecast_publish_refill_timestamp
       - script.execute: forecast_recalculate_model
       - script.wait: forecast_recalculate_model
       - script.execute: forecast_evaluate
@@ -946,8 +1011,10 @@ script:
           id(forecast_current_decline) = 0.0f;
           id(forecast_current_mad) = 0.0f;
           id(forecast_current_model_valid) = false;
+          id(last_recorded_refill_timestamp) = -1;
           ESP_LOGI("forecast", "Salt refill recorded manually at %.1f%%",
                    id(salt_level).state);
+      - script.execute: forecast_publish_refill_timestamp
       - script.execute: forecast_evaluate
 
   - id: evaluate_state
@@ -1385,6 +1452,14 @@ sensor:
     unit_of_measurement: "d"
     device_class: duration
     state_class: measurement
+    accuracy_decimals: 0
+    update_interval: never
+
+  - platform: template
+    name: "Last Recorded Refill"
+    id: last_recorded_refill
+    icon: mdi:calendar-refresh
+    device_class: timestamp
     accuracy_decimals: 0
     update_interval: never
 
