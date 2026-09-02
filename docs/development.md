@@ -49,7 +49,7 @@ web interface intentionally do not have credentials.
 
 ## ESPHome version
 
-SaltWatch 2.1.0 is validated with:
+SaltWatch 2.2.0 is validated with:
 
 - ESPHome 2026.8.1
 - ESP-IDF 5.5.5
@@ -113,19 +113,19 @@ rg -n "web_server|reboot_timeout|api:|ota:|password:" \
 The published browser image is scanned for validation credentials, checked for
 the ESP32 image header, and hashed before and after GitHub Pages deployment.
 
-## Current v2.1.0 build results
+## Current v2.2.0 build results
 
 | Build | RAM | Application flash | Result |
 | --- | ---: | ---: | --- |
 | Production | 27.7% | 49.3% | Passed |
 | Browser installer | 27.8% | 49.9% | Passed |
 
-The v2.1.0 hosted factory image is generated and verified as part of the
+The v2.2.0 hosted factory image is generated and verified as part of the
 release process. Its final size and SHA-256 are recorded below:
 
 ```text
 Size: 980,672 bytes
-SHA-256: b27e44fcbaf3638c485145d547e82596039e5c2d712e4e9142743d22fb0fe3cd
+SHA-256: 2a16d19db30bfaa7770bdb5b4948619fdb419fb65f0737e40cbdf4f163ede159
 ```
 
 ## Configuration audit expectations

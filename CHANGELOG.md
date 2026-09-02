@@ -4,6 +4,18 @@ All notable changes to SaltWatch are documented here.
 
 ## Unreleased
 
+## 2.2.0 - 2026-09-02
+
+- Rebuilt the Home Assistant notification blueprint around the canonical Salt
+  Status priority instead of three potentially overlapping problem entities.
+- Added automatic device names to notification titles, an optional forecast
+  toggle, and one optional reminder for a continuously active low-salt state.
+- Grouped required, notification, and advanced inputs for a clearer setup flow.
+- Reduced the required SaltWatch selections to Salt Status, Salt Level,
+  Calibration Details, and Estimated Days Until Low Salt.
+- Documented status transitions, reminder behavior, timer limitations, and the
+  clean replacement of the earlier blueprint input model.
+
 ## 2.1.0 - 2026-09-02
 
 - Added a persistent Last Recorded Refill timestamp for automatically confirmed

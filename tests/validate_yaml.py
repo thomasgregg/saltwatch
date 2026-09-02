@@ -50,13 +50,21 @@ def run() -> None:
     assert blueprint["blueprint"]["domain"] == "automation"
     assert blueprint["triggers"]
     assert blueprint["actions"]
-    blueprint_inputs = blueprint["blueprint"]["input"]
+    blueprint_sections = blueprint["blueprint"]["input"]
+    assert set(blueprint_sections) == {
+        "required",
+        "notification_options",
+        "advanced",
+    }
+    assert blueprint_sections["advanced"]["collapsed"] is True
+    for input_value in blueprint_sections["advanced"]["input"].values():
+        assert "default" in input_value
+
+    blueprint_inputs = blueprint_sections["required"]["input"]
     required_entities = {
-        "low_salt_entity": ("binary_sensor", "problem"),
-        "sensor_fault_entity": ("binary_sensor", "problem"),
-        "calibration_required_entity": ("binary_sensor", "problem"),
+        "salt_status_entity": ("sensor", None),
         "salt_level_entity": ("sensor", None),
-        "calibration_details_entity": ("text_sensor", None),
+        "calibration_details_entity": ("sensor", None),
         "forecast_entity": ("sensor", None),
     }
     for input_name, (domain, device_class) in required_entities.items():
@@ -70,30 +78,45 @@ def run() -> None:
     assert blueprint["trigger_variables"] == {
         "forecast_entity_for_trigger": {"!input": "forecast_entity"},
         "forecast_notice_days_for_trigger": {"!input": "forecast_notice_days"},
-        "low_salt_entity_for_trigger": {"!input": "low_salt_entity"},
-        "sensor_fault_entity_for_trigger": {"!input": "sensor_fault_entity"},
-        "calibration_required_entity_for_trigger": {
-            "!input": "calibration_required_entity"
-        },
+        "salt_status_entity_for_trigger": {"!input": "salt_status_entity"},
         "salt_level_entity_for_trigger": {"!input": "salt_level_entity"},
+    }
+    status_triggers = {
+        item["id"]: item
+        for item in blueprint["triggers"]
+        if item.get("id") in {
+            "sensor_fault",
+            "calibration_required",
+            "low_salt",
+            "recovered",
+            "low_salt_reminder",
+        }
+    }
+    assert status_triggers["sensor_fault"]["to"] == "Sensor Fault"
+    assert status_triggers["calibration_required"]["to"] == (
+        "Calibration Required"
+    )
+    assert status_triggers["low_salt"]["to"] == "Low Salt"
+    assert status_triggers["recovered"]["to"] == "Good"
+    assert status_triggers["low_salt_reminder"]["to"] == "Low Salt"
+    assert status_triggers["low_salt_reminder"]["enabled"] == {
+        "!input": "send_low_salt_reminder"
+    }
+    assert status_triggers["low_salt_reminder"]["for"] == {
+        "!input": "low_salt_reminder_delay"
     }
     forecast_trigger = next(
         item for item in blueprint["triggers"] if item.get("id") == "forecast"
     )
     assert forecast_trigger["trigger"] == "template"
+    assert forecast_trigger["enabled"] == {"!input": "send_forecast_notifications"}
     assert forecast_trigger["for"] == {"!input": "problem_delay"}
     assert "is_number(days)" in forecast_trigger["value_template"]
     assert "days | float > 0" in forecast_trigger["value_template"]
     assert "days | float <= forecast_notice_days_for_trigger | float" in (
         forecast_trigger["value_template"]
     )
-    assert "is_state(low_salt_entity_for_trigger, 'off')" in (
-        forecast_trigger["value_template"]
-    )
-    assert "is_state(sensor_fault_entity_for_trigger, 'off')" in (
-        forecast_trigger["value_template"]
-    )
-    assert "is_state(calibration_required_entity_for_trigger, 'off')" in (
+    assert "is_state(salt_status_entity_for_trigger, 'Good')" in (
         forecast_trigger["value_template"]
     )
     assert "is_number(states(salt_level_entity_for_trigger))" in (
@@ -103,11 +126,20 @@ def run() -> None:
     blueprint_text = Path(
         "home-assistant/blueprints/saltwatch-notifications.yaml"
     ).read_text()
-    assert "is_state(low_salt_entity, 'off')" in blueprint_text
-    assert "is_state(sensor_fault_entity, 'off')" in blueprint_text
-    assert "is_state(calibration_required_entity, 'off')" in blueprint_text
+    assert "is_state(salt_status_entity, 'Good')" in blueprint_text
+    assert "is_state(salt_status_entity, 'Low Salt')" in blueprint_text
     assert "is_number(states(salt_level_entity))" in blueprint_text
     assert "is_number(states(forecast_entity))" in blueprint_text
+    assert "device_attr(selected_device, 'name_by_user')" in blueprint_text
+    assert "trigger.from_state.state == 'Low Salt'" in blueprint_text
+    assert "trigger.from_state.state == 'Sensor Fault'" in blueprint_text
+    assert "trigger.from_state.state == 'Calibration Required'" in blueprint_text
+    for removed_input in (
+        "low_salt_entity",
+        "sensor_fault_entity",
+        "calibration_required_entity",
+    ):
+        assert removed_input not in blueprint_text
 
     core = load_yaml("saltwatch-core.yaml")
     assert core["esphome"]["name_add_mac_suffix"] is True
@@ -244,6 +276,7 @@ def run() -> None:
     assert manifest["builds"][0]["parts"][0]["path"] == (
         f"saltwatch-{version}.factory.bin"
     )
+    assert Path("docs", manifest["builds"][0]["parts"][0]["path"]).exists()
     assert f"| Release | {version} |" in Path(
         "docs/technical-reference.md"
     ).read_text()

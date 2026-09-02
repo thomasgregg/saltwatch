@@ -209,10 +209,11 @@ synchronization.
 
 ## Notifications
 
-The optional Home Assistant blueprint sends confirmed low-salt, fault,
-calibration, forecast, and recovery messages to a selected notification target.
-It imports through the Home Assistant UI and requires no package or restart.
-See [notification setup](docs/notifications.md).
+The optional Home Assistant blueprint follows Salt Status priority so fault,
+calibration, and low-salt conditions cannot generate competing alerts. It also
+supports device-named forecast and recovery messages plus one optional
+persistent-low reminder. It imports through the Home Assistant UI and requires
+no package or restart. See [notification setup](docs/notifications.md).
 
 ## Trustworthy failure behavior
 
