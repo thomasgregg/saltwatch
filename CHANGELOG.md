@@ -4,6 +4,9 @@ All notable changes to SaltWatch are documented here.
 
 ## Unreleased
 
+- Added a privacy-safe screenshot of the organized local SaltWatch web
+  interface to the README.
+
 ## 2.2.4 - 2026-09-04
 
 - Renamed the managed updater to **SaltWatch Firmware Update** so it is clearly

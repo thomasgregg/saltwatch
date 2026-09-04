@@ -246,6 +246,10 @@ compiles the adopted configuration instead of installing the published
 SaltWatch build. Use **SaltWatch Firmware Update** for standard releases and the
 Device Builder path only for customized firmware or recovery.
 
+<p align="center">
+  <img src="docs/images/saltwatch-web-interface.png" alt="SaltWatch local web interface showing the Status, Calibration, Forecast and Refill, Device Maintenance, and Diagnostics sections" width="684">
+</p>
+
 The web interface and all OTA paths intentionally have no password. Anyone who
 can reach the device can change calibration or replace its firmware. Keep
 SaltWatch on a trusted, preferably isolated IoT network, never expose it to the
