@@ -162,7 +162,7 @@ def run() -> None:
         {
             "platform": "http_request",
             "id": "saltwatch_firmware_update",
-            "name": "Firmware Update",
+            "name": "SaltWatch Firmware Update",
             "icon": "mdi:update",
             "device_class": "firmware",
             "source": "https://thomasgregg.github.io/saltwatch/manifest.json",
@@ -314,7 +314,7 @@ def run() -> None:
             "WiFi Signal",
         },
         "sorting_group_maintenance": {
-            "Firmware Update",
+            "SaltWatch Firmware Update",
         },
     }
     actual_web_groups = {group_id: set() for group_id in expected_web_groups}
@@ -332,7 +332,7 @@ def run() -> None:
                 actual_web_groups[group_id].add(entity["name"])
     assert actual_web_groups == expected_web_groups
     expected_icons = {
-        "Firmware Update": "mdi:update",
+        "SaltWatch Firmware Update": "mdi:update",
         "Full Distance": "mdi:arrow-up",
         "Empty Distance": "mdi:arrow-down",
         "Low Salt Threshold": "mdi:gauge",

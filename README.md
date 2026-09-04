@@ -151,8 +151,9 @@ rules, manual calibration, and low-salt behavior.
 | **Last Valid Measurement Age** | Diagnostic age of the most recent accepted sensor reading; disabled by default. |
 | **Forecast Confidence** | Optional evidence-quality diagnostic; disabled by default. |
 
-Entity names and identifiers are kept stable so firmware updates do not create
-duplicates in Home Assistant.
+Entity identifiers are kept stable so firmware updates do not create duplicates
+in Home Assistant. Default display names may be clarified between releases;
+Home Assistant preserves any names you customize yourself.
 
 Every SaltWatch node automatically appends the final three bytes of its MAC
 address to its technical ESPHome name, for example `saltwatch-a1b2c3`. This
@@ -236,11 +237,14 @@ design is documented in the [technical reference](docs/technical-reference.md).
 After Wi-Fi provisioning, open the MAC-suffixed address shown by ESPHome, such
 as `http://saltwatch-a1b2c3.local/`, or use the device IP. The local interface
 organizes the device into Status, Calibration, Forecast and Refill, and
-Device Maintenance, and Diagnostics sections. A Firmware Update entity checks
-the official SaltWatch release manifest every six hours and offers an update
-only when a newer release is available; installation always requires explicit
-approval. Manual web uploads and ESPHome Device Builder wireless installation
-remain available as recovery and customization paths.
+Device Maintenance, and Diagnostics sections. The **SaltWatch Firmware Update**
+entity checks the official SaltWatch release manifest every six hours and
+offers an update only when a newer release is available; installation always
+requires explicit approval. Home Assistant may also show a separate, normally
+disabled **Firmware** entity created by ESPHome Device Builder. That entity
+compiles the adopted configuration instead of installing the published
+SaltWatch build. Use **SaltWatch Firmware Update** for standard releases and the
+Device Builder path only for customized firmware or recovery.
 
 The web interface and all OTA paths intentionally have no password. Anyone who
 can reach the device can change calibration or replace its firmware. Keep

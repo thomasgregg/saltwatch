@@ -70,10 +70,10 @@ local interface.
 ## Managed firmware updates
 
 SaltWatch checks its official GitHub Pages release manifest every six hours. A
-**Firmware Update** entity appears in Home Assistant and under **Device
-Maintenance** in the local interface. When a newer version is available, review
-the release information and explicitly approve the installation. SaltWatch does
-not install updates automatically.
+**SaltWatch Firmware Update** entity appears in Home Assistant and under
+**Device Maintenance** in the local interface. When a newer version is
+available, review the release information and explicitly approve the
+installation. SaltWatch does not install updates automatically.
 
 The managed updater installs the canonical SaltWatch firmware and preserves
 Wi-Fi credentials, API encryption, calibration, and forecast data. If you have
@@ -82,11 +82,31 @@ included in the compiled firmware.
 
 The first release containing managed updates must still be installed through
 Device Builder or a manual OTA upload. Later releases will be detected by the
-Firmware Update entity.
+**SaltWatch Firmware Update** entity.
+
+### Why Home Assistant can show two firmware entries
+
+After SaltWatch is adopted in ESPHome Device Builder, its Home Assistant device
+page can contain both of these entries:
+
+| Entry | Provided by | What it installs | Recommended use |
+| --- | --- | --- | --- |
+| **SaltWatch Firmware Update** | SaltWatch device | The published, versioned SaltWatch OTA image from the official release manifest. | Normal SaltWatch updates. |
+| **Firmware** | Home Assistant's ESPHome Device Builder integration | A newly compiled image from the adopted YAML configuration. | Custom YAML changes, development, or recovery. |
+
+These entries update the same physical device, but they are not duplicates:
+they obtain and build the firmware differently. Home Assistant normally keeps
+its **Firmware** entry disabled, which is why it can appear grey with no state.
+Leave it disabled when using the standard SaltWatch firmware. It can be enabled
+later if a custom Device Builder build is needed. Disabling it does not remove
+SaltWatch, Device Builder, or either OTA capability.
 
 ## Updates through Device Builder
 
-For normal updates:
+Use this method for custom YAML changes, development, or recovery. For normal
+published SaltWatch releases, use **SaltWatch Firmware Update** instead.
+
+To install through Device Builder:
 
 1. Open SaltWatch in ESPHome Device Builder.
 2. Select **Install → Wirelessly**.

@@ -1,5 +1,5 @@
 substitutions:
-  project_version: "2.2.3"
+  project_version: "2.2.4"
   sensor_min_cm: "5.0"
   sensor_max_cm: "120.0"
   minimum_calibration_span_cm: "10.0"
@@ -109,7 +109,7 @@ ota:
 update:
   - platform: http_request
     id: saltwatch_firmware_update
-    name: "Firmware Update"
+    name: "SaltWatch Firmware Update"
     icon: mdi:update
     device_class: firmware
     source: https://thomasgregg.github.io/saltwatch/manifest.json

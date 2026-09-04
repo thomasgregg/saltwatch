@@ -4,6 +4,14 @@ All notable changes to SaltWatch are documented here.
 
 ## Unreleased
 
+## 2.2.4 - 2026-09-04
+
+- Renamed the managed updater to **SaltWatch Firmware Update** so it is clearly
+  distinguished from Home Assistant's ESPHome Device Builder **Firmware**
+  entity.
+- Documented why both firmware entries can appear, how their update paths
+  differ, and when to use each one.
+
 ## 2.2.3 - 2026-09-04
 
 - Added explicit, task-matched icons to every user-facing entity for a

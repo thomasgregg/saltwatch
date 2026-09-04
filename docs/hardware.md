@@ -100,8 +100,10 @@ Do not rely on low-salt alerts until this checklist passes.
 21. Open the local web interface without credentials and confirm the SaltWatch
     entities are visible.
 22. Confirm the device is reachable only from the intended trusted network.
-23. Confirm **Firmware Update** reports the installed SaltWatch version and does
-    not offer the same release as an update.
+23. Confirm **SaltWatch Firmware Update** reports the installed SaltWatch
+    version and does not offer the same release as an update. Do not confuse it
+    with Home Assistant's normally disabled **Firmware** entry for Device
+    Builder compilation.
 24. Test one web update using `firmware.bin` or `firmware.ota.bin`.
 25. On the next release, review and approve one managed update and confirm Wi-Fi,
     API encryption, calibration, and forecast state survive the reboot.
