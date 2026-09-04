@@ -6,9 +6,9 @@ All notable changes to SaltWatch are documented here.
 
 - Added a privacy-safe screenshot of the organized local SaltWatch web
   interface to the README.
-- Added a compact annotated installation gallery ahead of the Home Assistant
-  card screenshot, with equal-size framed thumbnails and portable image links
-  suitable for embedded views.
+- Added a full-width annotated installation gallery ahead of the Home Assistant
+  card screenshot, with equal-size panels and a portable image link suitable
+  for embedded views.
 - Updated the hardware list and mounting instructions for the photographed
   no-drill cable route through the existing lid clearance.
 
