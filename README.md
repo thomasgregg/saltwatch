@@ -19,6 +19,21 @@ SaltWatch explicitly marks failed or outdated measurements as unavailable, so
 an old reading cannot quietly look current after a blocked or disconnected
 sensor.
 
+## Installation at a glance
+
+The ToF sensor mounts under the lid and faces the salt. Its thin Grove cable
+runs through the lid's existing hinge clearance to the ATOM Lite outside the
+tank. This installation needs no drilled hole or rubber grommet; check that the
+lid opens and closes without pinching, rubbing, or pulling the cable.
+
+<p align="center">
+  <a href="https://raw.githubusercontent.com/thomasgregg/saltwatch/main/docs/images/saltwatch-installation-overview.jpg"><img src="https://raw.githubusercontent.com/thomasgregg/saltwatch/main/docs/images/saltwatch-installation-overview.jpg" alt="Complete SaltWatch installation with the external ATOM Lite controller, USB power cable, Grove cable, and salt tank labelled" width="31%"></a>
+  <a href="https://raw.githubusercontent.com/thomasgregg/saltwatch/main/docs/images/saltwatch-lid-sensor.jpg"><img src="https://raw.githubusercontent.com/thomasgregg/saltwatch/main/docs/images/saltwatch-lid-sensor.jpg" alt="M5Stack ToF distance sensor mounted beneath the tank lid with its Grove cable labelled" width="31%"></a>
+  <a href="https://raw.githubusercontent.com/thomasgregg/saltwatch/main/docs/images/saltwatch-tank-interior.jpg"><img src="https://raw.githubusercontent.com/thomasgregg/saltwatch/main/docs/images/saltwatch-tank-interior.jpg" alt="Inside the water-softener tank with the salt pellets, brine well, and sensor measurement area labelled" width="31%"></a>
+</p>
+
+<p align="center"><sub>Select any photo to enlarge it.</sub></p>
+
 <p align="center">
   <a href="https://github.com/thomasgregg/saltwatch-card">
     <img src="docs/images/saltwatch-card.png" alt="SaltWatch Card showing the current salt level, forecast, health status, and low-salt threshold in Home Assistant" width="100%">
@@ -35,6 +50,7 @@ dashboard setup.
 ## Contents
 
 - [Why SaltWatch](#why-saltwatch)
+- [Installation at a glance](#installation-at-a-glance)
 - [Hardware](#hardware)
 - [Quick start](#quick-start)
 - [Calibration](#calibration)
@@ -67,17 +83,18 @@ restarts, and never overrides measurement or fault safety.
 
 ## Hardware
 
-- M5Stack ATOM Lite **C008**
-- M5Stack ToF Unit **U010** with VL53L0X
-- Included Grove cable
-- USB data cable: USB-C for the ATOM Lite, with USB-C or USB-A to match the
-  computer
-- 5 V USB power supply
-- 3M Dual Lock SJ3550 and a rubber cable grommet for mounting
+| Part | Purpose |
+| --- | --- |
+| M5Stack ATOM Lite **C008** | SaltWatch controller outside the tank |
+| M5Stack ToF Unit **U010** with VL53L0X | Distance sensor beneath the lid |
+| Included HY2.0-4P Grove cable | Connects the sensor to the controller |
+| USB-C data cable and 5 V USB power supply | Initial browser installation and everyday power |
+| 3M Dual Lock SJ3550 or equivalent removable mounting strips | Secures the sensor and controller while allowing removal |
 
 The ToF Unit mounts inside the lid and points down at the salt. The ATOM Lite
-stays outside the tank. See the [hardware and acceptance guide](docs/hardware.md)
-before permanent installation.
+stays outside the tank. No drilling is needed when the Grove cable fits safely
+through an existing hinge or lid gap. See the
+[hardware and acceptance guide](docs/hardware.md) before permanent installation.
 
 ## Quick start
 

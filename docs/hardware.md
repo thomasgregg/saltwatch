@@ -10,8 +10,10 @@
 - USB **data** cable: USB-C for the ATOM Lite, with USB-C or USB-A to match the
   computer
 - 5 V USB power supply
-- 3M Dual Lock SJ3550 for removable mounting
-- Rubber cable grommet sized for the lid opening
+- 3M Dual Lock SJ3550 or equivalent removable mounting strips
+
+The installation shown in the README uses the lid's existing hinge clearance
+for the thin Grove cable. It does not require a drilled hole or rubber grommet.
 
 ## Electrical configuration
 
@@ -34,16 +36,17 @@ Official sources:
 
 ## Physical installation
 
-1. Disconnect power before drilling, mounting, connecting cables, or pouring
-   salt.
-2. Mount the ToF Unit inside the lid, pointing vertically down at the salt.
-3. Do not place it directly above the normal salt-pouring location.
-4. Keep the optical opening completely uncovered.
-5. Mount the ATOM Lite outside the tank.
-6. Connect the ToF Unit to the ATOM Lite through the included Grove cable.
-7. Protect the cable opening with a rubber grommet and remove sharp edges first.
+1. Disconnect power before mounting, connecting cables, or pouring salt.
+2. Dry-fit the Grove cable through an existing hinge or lid gap. Open and close
+   the lid fully and confirm the cable is not pinched, rubbed, or pulled. If
+   there is no safe clearance, do not trap the cable under the lid.
+3. Mount the ToF Unit inside the lid, pointing vertically down at the salt.
+4. Do not place it directly above the normal salt-pouring location.
+5. Keep the optical opening completely uncovered.
+6. Mount the ATOM Lite outside the tank.
+7. Connect the ToF Unit to the ATOM Lite through the included Grove cable.
 8. Use removable 3M Dual Lock SJ3550 so the sensor can be removed for cleaning.
-9. Clean and dry both mounting surfaces before applying adhesive, then follow
+9. Clean and dry both mounting surfaces before applying the strips, then follow
    the adhesive manufacturer's cure instructions.
 10. Route and strain-relieve the cable so opening the lid cannot pull either
     connector.
