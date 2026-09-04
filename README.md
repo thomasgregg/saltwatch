@@ -27,9 +27,9 @@ tank. This installation needs no drilled hole or rubber grommet; check that the
 lid opens and closes without pinching, rubbing, or pulling the cable.
 
 <p align="center">
-  <a href="https://raw.githubusercontent.com/thomasgregg/saltwatch/main/docs/images/saltwatch-installation-overview.jpg"><img src="https://raw.githubusercontent.com/thomasgregg/saltwatch/main/docs/images/saltwatch-installation-overview.jpg" alt="Complete SaltWatch installation with the external ATOM Lite controller, USB power cable, Grove cable, and salt tank labelled" width="31%"></a>
-  <a href="https://raw.githubusercontent.com/thomasgregg/saltwatch/main/docs/images/saltwatch-lid-sensor.jpg"><img src="https://raw.githubusercontent.com/thomasgregg/saltwatch/main/docs/images/saltwatch-lid-sensor.jpg" alt="M5Stack ToF distance sensor mounted beneath the tank lid with its Grove cable labelled" width="31%"></a>
-  <a href="https://raw.githubusercontent.com/thomasgregg/saltwatch/main/docs/images/saltwatch-tank-interior.jpg"><img src="https://raw.githubusercontent.com/thomasgregg/saltwatch/main/docs/images/saltwatch-tank-interior.jpg" alt="Inside the water-softener tank with the salt pellets, brine well, and sensor measurement area labelled" width="31%"></a>
+  <a href="https://raw.githubusercontent.com/thomasgregg/saltwatch/main/docs/images/saltwatch-installation-overview.jpg"><img src="https://raw.githubusercontent.com/thomasgregg/saltwatch/main/docs/images/saltwatch-installation-overview-thumbnail.jpg" alt="Complete SaltWatch installation with the external ATOM Lite controller, USB power cable, Grove cable, and salt tank labelled" width="31%"></a>
+  <a href="https://raw.githubusercontent.com/thomasgregg/saltwatch/main/docs/images/saltwatch-lid-sensor.jpg"><img src="https://raw.githubusercontent.com/thomasgregg/saltwatch/main/docs/images/saltwatch-lid-sensor-thumbnail.jpg" alt="M5Stack ToF distance sensor mounted beneath the tank lid with its Grove cable labelled" width="31%"></a>
+  <a href="https://raw.githubusercontent.com/thomasgregg/saltwatch/main/docs/images/saltwatch-tank-interior.jpg"><img src="https://raw.githubusercontent.com/thomasgregg/saltwatch/main/docs/images/saltwatch-tank-interior-thumbnail.jpg" alt="Inside the water-softener tank with the salt pellets, brine well, and sensor measurement area labelled" width="31%"></a>
 </p>
 
 <p align="center"><sub>Select any photo to enlarge it.</sub></p>
