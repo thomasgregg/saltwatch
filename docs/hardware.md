@@ -100,19 +100,23 @@ Do not rely on low-salt alerts until this checklist passes.
 21. Open the local web interface without credentials and confirm the SaltWatch
     entities are visible.
 22. Confirm the device is reachable only from the intended trusted network.
-23. Test one web update using `firmware.bin` or `firmware.ota.bin`.
-24. Observe the installed system for several days before relying on alerts.
+23. Confirm **Firmware Update** reports the installed SaltWatch version and does
+    not offer the same release as an update.
+24. Test one web update using `firmware.bin` or `firmware.ota.bin`.
+25. On the next release, review and approve one managed update and confirm Wi-Fi,
+    API encryption, calibration, and forecast state survive the reboot.
+26. Observe the installed system for several days before relying on alerts.
 
 ### Forecast operation
 
-25. After calibration, confirm **Forecast Status** shows `Learning` rather than
+27. After calibration, confirm **Forecast Status** shows `Learning` rather than
     a fault state.
-26. After at least seven trustworthy daily values and meaningful salt decline,
+28. After at least seven trustworthy daily values and meaningful salt decline,
     confirm **Estimated Days Until Low Salt** becomes available.
-27. Compare the estimate with the observed decline; treat it as planning
+29. Compare the estimate with the observed decline; treat it as planning
     guidance rather than a guaranteed date.
-28. After a normal refill, confirm `Confirming Refill` clears after the next
+30. After a normal refill, confirm `Confirming Refill` clears after the next
     valid six-hour period and the estimate either resumes or returns to
     `Learning` when no prior trustworthy cycle exists.
-29. For a small test top-up, press **Record Salt Refill** after the displayed
+31. For a small test top-up, press **Record Salt Refill** after the displayed
     level settles and confirm a new forecast cycle starts.

@@ -14,7 +14,7 @@ lambdas and watchdog scripts; it does not use a custom C++ component.
 | Node name | `saltwatch` |
 | Friendly name | `SaltWatch` |
 | ESPHome project | `saltwatch.salt-monitor` |
-| Release | 2.2.1 |
+| Release | 2.2.2 |
 | Board | `m5stack-atom` |
 | Framework | ESP-IDF |
 | I²C | SDA GPIO26, SCL GPIO32 |
@@ -162,6 +162,7 @@ higher-priority problem is active.
 | Forecast Status | Text sensor | Explains forecast availability and learning state. |
 | Forecast Details | Diagnostic text sensor | Gives concise forecast learning progress or the current blocking reason. |
 | Forecast Confidence | Diagnostic text sensor | Low/Medium/High evidence quality; disabled by default. |
+| Firmware Update | Update | Checks the official release manifest every six hours and installs only after explicit approval. |
 | WiFi Signal | Diagnostic sensor | Standard ESPHome Wi-Fi RSSI. |
 | Last Valid Measurement Age | Diagnostic sensor, s | Monotonic age of the most recent accepted raw reading; disabled by default to avoid unnecessary history. |
 
@@ -179,9 +180,16 @@ higher-priority problem is active.
 - The local web interface is self-contained and does not load its assets from
   the internet.
 - The local web interface uses ESPHome web-server version 3 with task-oriented
-  Status, Calibration, Forecast and Refill, and Diagnostics groups.
+  Status, Calibration, Forecast and Refill, Device Maintenance, and Diagnostics
+  groups.
+- The managed updater checks the GitHub Pages manifest over verified HTTPS every
+  six hours. It never installs a release automatically.
+- The canonical OTA image preserves provisioned Wi-Fi, API encryption,
+  calibration, and forecast preferences. Custom YAML builds should continue to
+  be installed through Device Builder.
 - Browser log streaming is disabled.
-- Web UI, web OTA, and native OTA are intentionally passwordless.
+- Web UI, web OTA, native OTA, and managed HTTP OTA are intentionally
+  passwordless.
 - No fallback access point or captive portal is enabled.
 
 ## Forecast architecture
@@ -220,9 +228,9 @@ user-facing status reference.
 
 The SaltWatch firmware does not implement automatic regeneration detection,
 last regeneration, overdue warnings, raw measurement-history buffers, user-facing
-usage trends, fast polling, MQTT, automatic HTTP update checks, remote
-firmware downloads, cloud services, RGB status behavior, a custom Home
-Assistant dashboard, or tank-height configuration.
+usage trends, fast polling, MQTT, automatic unattended updates, cloud services,
+RGB status behavior, a custom Home Assistant dashboard, or tank-height
+configuration.
 
 The built-in predictor stores compact daily aggregates and completed-cycle
 statistics only; it does not add raw historical measurement storage. An optional
@@ -261,3 +269,4 @@ and explicit failure reporting.
 - [ESPHome native OTA](https://esphome.io/components/ota/esphome/)
 - [ESPHome web server](https://esphome.io/components/web_server/)
 - [ESPHome web-server OTA](https://esphome.io/components/ota/web_server/)
+- [ESPHome managed HTTP updates](https://esphome.io/components/update/http_request/)

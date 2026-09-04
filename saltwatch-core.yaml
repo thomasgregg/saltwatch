@@ -1,5 +1,5 @@
 substitutions:
-  project_version: "2.2.1"
+  project_version: "2.2.2"
   sensor_min_cm: "5.0"
   sensor_max_cm: "120.0"
   minimum_calibration_span_cm: "10.0"
@@ -84,15 +84,38 @@ web_server:
     - id: sorting_group_forecast
       name: "Forecast and Refill"
       sorting_weight: 30
+    - id: sorting_group_maintenance
+      name: "Device Maintenance"
+      sorting_weight: 40
     - id: sorting_group_diagnostics
       name: "Diagnostics"
-      sorting_weight: 40
+      sorting_weight: 50
+
+# Check the public release manifest over verified HTTPS. Updates are announced
+# as an entity and are installed only when the user explicitly approves them.
+http_request:
+  id: saltwatch_http_request
+  verify_ssl: true
+  timeout: 10s
 
 ota:
   - platform: esphome
     id: saltwatch_ota
   - platform: web_server
     id: saltwatch_web_ota
+  - platform: http_request
+    id: saltwatch_http_ota
+
+update:
+  - platform: http_request
+    id: saltwatch_firmware_update
+    name: "Firmware Update"
+    device_class: firmware
+    source: https://thomasgregg.github.io/saltwatch/manifest.json
+    update_interval: 6h
+    web_server:
+      sorting_group_id: sorting_group_maintenance
+      sorting_weight: 10
 
 i2c:
   sda: GPIO26

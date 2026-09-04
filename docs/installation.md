@@ -49,19 +49,40 @@ interface is available immediately at that address without a login.
 Adoption turns the public bootstrap into a configuration owned by your Home
 Assistant installation and adds an encrypted native API key.
 
-1. Open **ESPHome Device Builder** in Home Assistant.
-2. Find the discovered SaltWatch device and select **Adopt** or **Take Control**.
-3. Keep the generated API encryption configuration.
-4. Select **Install → Wirelessly** to install the adopted configuration.
-5. In Home Assistant, open **Settings → Devices & services**.
-6. Add the discovered ESPHome device. Enter the generated API key if prompted.
+1. When the browser installer reports that the device is connected, select
+   **Add to Home Assistant**. This provisions and stores the unique encrypted
+   API key on the device.
+2. Open **ESPHome Device Builder** in Home Assistant.
+3. Find the discovered SaltWatch device and select **Adopt** or **Take Control**.
+4. Keep the generated API encryption configuration.
+5. Select **Install → Wirelessly** to install the adopted configuration.
 
-The web UI and both OTA components are part of the shared SaltWatch package, so
+If SaltWatch was added directly under **Settings → Devices & services**, that is
+equivalent to the first step. Enter the generated API key if prompted.
+
+The web UI and all OTA components are part of the shared SaltWatch package, so
 adoption does not require extra OTA/web secrets or copied YAML blocks.
 
 SaltWatch always uses a MAC-suffixed hostname such as
 `saltwatch-a1b2c3.local`. Use the hostname shown by ESPHome when opening the
 local interface.
+
+## Managed firmware updates
+
+SaltWatch checks its official GitHub Pages release manifest every six hours. A
+**Firmware Update** entity appears in Home Assistant and under **Device
+Maintenance** in the local interface. When a newer version is available, review
+the release information and explicitly approve the installation. SaltWatch does
+not install updates automatically.
+
+The managed updater installs the canonical SaltWatch firmware and preserves
+Wi-Fi credentials, API encryption, calibration, and forecast data. If you have
+added custom YAML overrides, continue using Device Builder so those changes are
+included in the compiled firmware.
+
+The first release containing managed updates must still be installed through
+Device Builder or a manual OTA upload. Later releases will be detected by the
+Firmware Update entity.
 
 ## Updates through Device Builder
 

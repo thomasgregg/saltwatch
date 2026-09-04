@@ -4,6 +4,16 @@ All notable changes to SaltWatch are documented here.
 
 ## Unreleased
 
+## 2.2.2 - 2026-09-04
+
+- Added a Firmware Update entity that checks the official GitHub Pages manifest
+  every six hours and installs only after explicit user approval.
+- Added verified-HTTPS managed OTA while retaining Device Builder, native OTA,
+  and local web uploads.
+- Added a versioned OTA binary and checksum metadata to the release manifest.
+- Added a Device Maintenance section to the local interface.
+- Documented the canonical-firmware and custom-YAML update paths.
+
 ## 2.2.1 - 2026-09-04
 
 - Updated the validated ESPHome toolchain from 2026.8.1 to 2026.8.2.

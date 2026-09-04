@@ -90,11 +90,12 @@ before permanent installation.
 4. Enter the 2.4 GHz Wi-Fi credentials when prompted.
 5. Open the local interface at the address shown by the installer. No login is
    required.
-6. Open ESPHome Device Builder in Home Assistant and select **Adopt** for the
-   discovered SaltWatch device. Adoption generates the encrypted native API
-   configuration automatically.
-7. Add the discovered ESPHome integration under **Settings → Devices &
-   services**.
+6. Select **Add to Home Assistant** when the installer offers it, or add the
+   discovered ESPHome integration under **Settings → Devices & services**. This
+   provisions the unique API encryption key on the device.
+7. Open ESPHome Device Builder and select **Adopt** for the discovered
+   SaltWatch device. Keep the generated encrypted API configuration and install
+   it wirelessly.
 8. Install the sensor in the lid and complete both calibration steps below.
 
 No command line, local ESPHome installation, OTA password, or web-server
@@ -235,10 +236,13 @@ design is documented in the [technical reference](docs/technical-reference.md).
 After Wi-Fi provisioning, open the MAC-suffixed address shown by ESPHome, such
 as `http://saltwatch-a1b2c3.local/`, or use the device IP. The local interface
 organizes the device into Status, Calibration, Forecast and Refill, and
-Diagnostics sections. It supports calibration controls and manual OTA firmware
-uploads. ESPHome Device Builder can also install updates wirelessly.
+Device Maintenance, and Diagnostics sections. A Firmware Update entity checks
+the official SaltWatch release manifest every six hours and offers an update
+only when a newer release is available; installation always requires explicit
+approval. Manual web uploads and ESPHome Device Builder wireless installation
+remain available as recovery and customization paths.
 
-The web interface and both OTA paths intentionally have no password. Anyone who
+The web interface and all OTA paths intentionally have no password. Anyone who
 can reach the device can change calibration or replace its firmware. Keep
 SaltWatch on a trusted, preferably isolated IoT network, never expose it to the
 internet, and restrict access with firewall rules when possible. Home Assistant

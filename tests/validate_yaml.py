@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -150,6 +151,27 @@ def run() -> None:
     assert core["api"]["reboot_timeout"] == "0s"
     assert "auth" not in core["web_server"]
     assert all("password" not in item for item in core["ota"])
+    assert [item["platform"] for item in core["ota"]] == [
+        "esphome",
+        "web_server",
+        "http_request",
+    ]
+    assert core["http_request"]["verify_ssl"] is True
+    assert core["http_request"]["timeout"] == "10s"
+    assert core["update"] == [
+        {
+            "platform": "http_request",
+            "id": "saltwatch_firmware_update",
+            "name": "Firmware Update",
+            "device_class": "firmware",
+            "source": "https://thomasgregg.github.io/saltwatch/manifest.json",
+            "update_interval": "6h",
+            "web_server": {
+                "sorting_group_id": "sorting_group_maintenance",
+                "sorting_weight": 10,
+            },
+        }
+    ]
     assert core["time"][0]["platform"] == "homeassistant"
 
     emulator = load_yaml("saltwatch-emulator.yaml")
@@ -258,6 +280,7 @@ def run() -> None:
         "Status",
         "Calibration",
         "Forecast and Refill",
+        "Device Maintenance",
         "Diagnostics",
     ]
     expected_web_groups = {
@@ -289,9 +312,19 @@ def run() -> None:
             "Last Valid Measurement Age",
             "WiFi Signal",
         },
+        "sorting_group_maintenance": {
+            "Firmware Update",
+        },
     }
     actual_web_groups = {group_id: set() for group_id in expected_web_groups}
-    for domain in ("number", "button", "sensor", "binary_sensor", "text_sensor"):
+    for domain in (
+        "number",
+        "button",
+        "sensor",
+        "binary_sensor",
+        "text_sensor",
+        "update",
+    ):
         for entity in core[domain]:
             if entity.get("name") and not entity.get("internal"):
                 group_id = entity["web_server"]["sorting_group_id"]
@@ -325,7 +358,30 @@ def run() -> None:
     assert manifest["builds"][0]["parts"][0]["path"] == (
         f"saltwatch-{version}.factory.bin"
     )
-    assert Path("docs", manifest["builds"][0]["parts"][0]["path"]).exists()
+    factory_path = Path("docs", manifest["builds"][0]["parts"][0]["path"])
+    assert factory_path.exists()
+    ota = manifest["builds"][0]["ota"]
+    assert ota["path"] == f"saltwatch-{version}.ota.bin"
+    ota_path = Path("docs", ota["path"])
+    assert ota_path.exists()
+    assert len(ota["md5"]) == 32
+    assert ota["md5"] == hashlib.md5(ota_path.read_bytes()).hexdigest()
+    assert ota["release_url"].endswith(f"/releases/tag/v{version}")
+    assert ota["summary"]
+    factory_bytes = factory_path.read_bytes()
+    ota_bytes = ota_path.read_bytes()
+    assert factory_bytes[0x1000] == 0xE9
+    assert ota_bytes[0] == 0xE9
+    assert len(ota_bytes) < 0x1C0000
+    assert version.encode() in factory_bytes
+    assert version.encode() in ota_bytes
+    for forbidden in (
+        b"VALIDATION_ONLY",
+        b"validation-only-password",
+        b"MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
+    ):
+        assert forbidden not in factory_bytes
+        assert forbidden not in ota_bytes
     assert f"| Release | {version} |" in Path(
         "docs/technical-reference.md"
     ).read_text()

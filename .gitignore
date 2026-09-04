@@ -7,8 +7,10 @@ build/
 *.map
 *.log
 
-# The versioned factory image is intentionally published for ESP Web Tools.
+# Versioned factory and OTA images are intentionally published for ESP Web
+# Tools and managed firmware updates.
 !docs/*.factory.bin
+!docs/*.ota.bin
 
 # Local environments and tooling
 .venv/

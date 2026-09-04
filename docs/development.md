@@ -14,6 +14,7 @@
 | `docs/index.html` | ESP Web Tools installer page. |
 | `docs/manifest.json` | Versioned ESP Web Tools manifest. |
 | `docs/*.factory.bin` | Published versioned browser-installer factory images. |
+| `docs/*.ota.bin` | Canonical managed-update images. |
 | `home-assistant/blueprints/` | Optional SaltWatch notification blueprint. |
 | `tests/` | Small logic, Home Assistant YAML, and release-metadata regression checks. |
 | `.github/workflows/esphome.yml` | Clean configuration and compile validation. |
@@ -49,7 +50,7 @@ web interface intentionally do not have credentials.
 
 ## ESPHome version
 
-SaltWatch 2.2.1 is validated with:
+SaltWatch 2.2.2 is validated with:
 
 - ESPHome 2026.8.2
 - ESP-IDF 5.5.5
@@ -84,15 +85,17 @@ add the ESPHome integration manually in Home Assistant using the development
 computer's LAN address and API port `6053`. The process exposes adjustable test
 controls and must remain running while Home Assistant uses the virtual device.
 
-The production build creates:
+The production and browser-installer builds create:
 
 ```text
 .esphome/build/saltwatch/build/firmware.factory.bin
 .esphome/build/saltwatch/build/firmware.ota.bin
 ```
 
-Use `firmware.factory.bin` only for USB flashing and `firmware.ota.bin` for the
-local web updater.
+Use `firmware.factory.bin` only for USB flashing. Use `firmware.ota.bin` for the
+managed updater or local web updater. Public OTA images are built from
+`saltwatch-webinstall.yaml`, so they contain no per-installation credentials and
+reuse the Wi-Fi and API encryption values provisioned on the device.
 
 ## Release validation
 
@@ -110,22 +113,26 @@ rg -n "web_server|reboot_timeout|api:|ota:|password:" \
   saltwatch.yaml saltwatch-webinstall.yaml saltwatch-core.yaml
 ```
 
-The published browser image is scanned for validation credentials, checked for
-the ESP32 image header, and hashed before and after GitHub Pages deployment.
+The published browser and OTA images are scanned for validation credentials,
+checked for the ESP32 image header, and hashed before and after GitHub Pages
+deployment. The manifest's OTA MD5 must match the published OTA image.
 
-## Current v2.2.1 build results
+## Current v2.2.2 build results
 
 | Build | RAM | Application flash | Result |
 | --- | ---: | ---: | --- |
-| Production | 27.7% | 53.0% | Passed |
-| Browser installer | 27.8% | 53.6% | Passed |
+| Production | 28.8% | 59.7% | Passed |
+| Browser installer | 28.9% | 60.3% | Passed |
 
-The v2.2.1 hosted factory image is generated and verified as part of the
-release process. Its final size and SHA-256 are recorded below:
+The v2.2.2 hosted images are generated and verified as part of the release
+process. Their final sizes and SHA-256 hashes are recorded below:
 
 ```text
-Size: 1,048,752 bytes
-SHA-256: af94f668bb19f9c323cf254fdc4c42e3fc1eaf0c91515eaf4653ee04d842a229
+Factory size: 1,171,456 bytes
+Factory SHA-256: df47e5d14f18973d9baee97b63f373f21a6deab52a8c8ab249d4684328b20133
+OTA size: 1,105,920 bytes
+OTA MD5: 47def3b6313da1767993744f8a13bb59
+OTA SHA-256: 9b5bf7128926863172be1d663a1632d521f382522ec5253afda784b148a89581
 ```
 
 ## Configuration audit expectations
@@ -137,6 +144,6 @@ SHA-256: af94f668bb19f9c323cf254fdc4c42e3fc1eaf0c91515eaf4653ee04d842a229
 - no native or web OTA password
 - no MQTT
 - no fallback access point or captive portal
-- no HTTP update checker or automatic remote download
+- managed update checks use verified HTTPS and never install automatically
 - no tracked `secrets.yaml`, build directory, compiled production firmware, or
   logs
