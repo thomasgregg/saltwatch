@@ -4,6 +4,11 @@ All notable changes to SaltWatch are documented here.
 
 ## Unreleased
 
+## 2.2.3 - 2026-09-04
+
+- Added explicit, task-matched icons to every user-facing entity for a
+  consistent local web interface.
+
 ## 2.2.2 - 2026-09-04
 
 - Added a Firmware Update entity that checks the official GitHub Pages manifest

@@ -1,5 +1,5 @@
 substitutions:
-  project_version: "2.2.2"
+  project_version: "2.2.3"
   sensor_min_cm: "5.0"
   sensor_max_cm: "120.0"
   minimum_calibration_span_cm: "10.0"
@@ -110,6 +110,7 @@ update:
   - platform: http_request
     id: saltwatch_firmware_update
     name: "Firmware Update"
+    icon: mdi:update
     device_class: firmware
     source: https://thomasgregg.github.io/saltwatch/manifest.json
     update_interval: 6h
@@ -1246,6 +1247,7 @@ number:
   - platform: template
     name: "Full Distance"
     id: full_distance
+    icon: mdi:arrow-up
     entity_category: config
     web_server:
       sorting_group_id: sorting_group_calibration
@@ -1293,6 +1295,7 @@ number:
   - platform: template
     name: "Empty Distance"
     id: empty_distance
+    icon: mdi:arrow-down
     entity_category: config
     web_server:
       sorting_group_id: sorting_group_calibration
@@ -1340,6 +1343,7 @@ number:
   - platform: template
     name: "Low Salt Threshold"
     id: low_salt_threshold
+    icon: mdi:gauge
     entity_category: config
     web_server:
       sorting_group_id: sorting_group_forecast
@@ -1360,6 +1364,7 @@ button:
   - platform: template
     name: "Set Current Distance as Full"
     id: set_current_distance_as_full
+    icon: mdi:target
     entity_category: config
     web_server:
       sorting_group_id: sorting_group_calibration
@@ -1389,6 +1394,7 @@ button:
   - platform: template
     name: "Set Current Distance as Empty"
     id: set_current_distance_as_empty
+    icon: mdi:target
     entity_category: config
     web_server:
       sorting_group_id: sorting_group_calibration
@@ -1418,6 +1424,7 @@ button:
   - platform: template
     name: "Record Salt Refill"
     id: record_salt_refill
+    icon: mdi:refresh
     entity_category: config
     web_server:
       sorting_group_id: sorting_group_forecast
@@ -1490,6 +1497,7 @@ sensor:
   - platform: template
     name: "Distance to Salt"
     id: distance_to_salt
+    icon: mdi:ruler
     web_server:
       sorting_group_id: sorting_group_calibration
       sorting_weight: 10
@@ -1502,6 +1510,7 @@ sensor:
   - platform: template
     name: "Salt Level"
     id: salt_level
+    icon: mdi:percent
     web_server:
       sorting_group_id: sorting_group_status
       sorting_weight: 20
@@ -1537,6 +1546,7 @@ sensor:
   - platform: wifi_signal
     name: "WiFi Signal"
     id: wifi_signal_db
+    icon: mdi:wifi
     entity_category: diagnostic
     web_server:
       sorting_group_id: sorting_group_diagnostics
@@ -1546,6 +1556,7 @@ sensor:
   - platform: template
     name: "Last Valid Measurement Age"
     id: last_valid_measurement_age
+    icon: mdi:timer-outline
     entity_category: diagnostic
     web_server:
       sorting_group_id: sorting_group_diagnostics
@@ -1561,6 +1572,7 @@ binary_sensor:
   - platform: template
     name: "Low Salt"
     id: low_salt
+    icon: mdi:alert-outline
     device_class: problem
     web_server:
       sorting_group_id: sorting_group_status
@@ -1569,6 +1581,7 @@ binary_sensor:
   - platform: template
     name: "Sensor Fault"
     id: sensor_fault
+    icon: mdi:alert-octagon-outline
     device_class: problem
     web_server:
       sorting_group_id: sorting_group_status
@@ -1577,6 +1590,7 @@ binary_sensor:
   - platform: template
     name: "Calibration Required"
     id: calibration_required
+    icon: mdi:tune
     device_class: problem
     web_server:
       sorting_group_id: sorting_group_status
@@ -1586,6 +1600,7 @@ text_sensor:
   - platform: template
     name: "Salt Status"
     id: salt_status
+    icon: mdi:information-outline
     web_server:
       sorting_group_id: sorting_group_status
       sorting_weight: 10
@@ -1594,6 +1609,7 @@ text_sensor:
   - platform: template
     name: "Calibration Details"
     id: calibration_details
+    icon: mdi:information-outline
     entity_category: diagnostic
     web_server:
       sorting_group_id: sorting_group_calibration

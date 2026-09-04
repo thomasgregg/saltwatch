@@ -163,6 +163,7 @@ def run() -> None:
             "platform": "http_request",
             "id": "saltwatch_firmware_update",
             "name": "Firmware Update",
+            "icon": "mdi:update",
             "device_class": "firmware",
             "source": "https://thomasgregg.github.io/saltwatch/manifest.json",
             "update_interval": "6h",
@@ -330,6 +331,42 @@ def run() -> None:
                 group_id = entity["web_server"]["sorting_group_id"]
                 actual_web_groups[group_id].add(entity["name"])
     assert actual_web_groups == expected_web_groups
+    expected_icons = {
+        "Firmware Update": "mdi:update",
+        "Full Distance": "mdi:arrow-up",
+        "Empty Distance": "mdi:arrow-down",
+        "Low Salt Threshold": "mdi:gauge",
+        "Set Current Distance as Full": "mdi:target",
+        "Set Current Distance as Empty": "mdi:target",
+        "Record Salt Refill": "mdi:refresh",
+        "Distance to Salt": "mdi:ruler",
+        "Salt Level": "mdi:percent",
+        "Estimated Days Until Low Salt": "mdi:calendar-clock",
+        "Last Recorded Refill": "mdi:calendar-refresh",
+        "WiFi Signal": "mdi:wifi",
+        "Last Valid Measurement Age": "mdi:timer-outline",
+        "Low Salt": "mdi:alert-outline",
+        "Sensor Fault": "mdi:alert-octagon-outline",
+        "Calibration Required": "mdi:tune",
+        "Salt Status": "mdi:information-outline",
+        "Calibration Details": "mdi:information-outline",
+        "Forecast Status": "mdi:chart-timeline-variant",
+        "Forecast Details": "mdi:information-outline",
+        "Forecast Confidence": "mdi:chart-bell-curve-cumulative",
+    }
+    actual_icons = {}
+    for domain in (
+        "number",
+        "button",
+        "sensor",
+        "binary_sensor",
+        "text_sensor",
+        "update",
+    ):
+        for entity in core[domain]:
+            if entity.get("name") and not entity.get("internal"):
+                actual_icons[entity["name"]] = entity.get("icon")
+    assert actual_icons == expected_icons
     assert "forecast_bucket_sample_count) < 36" in core_text
     assert "forecast_daily_history_size: \"28\"" in core_text
     assert "forecast_minimum_decline_percent: \"2.0\"" in core_text

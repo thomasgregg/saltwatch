@@ -1,6 +1,6 @@
 {
   "name": "SaltWatch",
-  "version": "2.2.2",
+  "version": "2.2.3",
   "home_assistant_domain": "esphome",
   "new_install_prompt_erase": true,
   "builds": [
@@ -8,15 +8,15 @@
       "chipFamily": "ESP32",
       "parts": [
         {
-          "path": "saltwatch-2.2.2.factory.bin",
+          "path": "saltwatch-2.2.3.factory.bin",
           "offset": 0
         }
       ],
       "ota": {
-        "md5": "47def3b6313da1767993744f8a13bb59",
-        "path": "saltwatch-2.2.2.ota.bin",
-        "release_url": "https://github.com/thomasgregg/saltwatch/releases/tag/v2.2.2",
-        "summary": "Adds user-approved managed firmware updates in Home Assistant and the local SaltWatch interface."
+        "md5": "7aacfba22b8a0ec10edbc58d5a6345f2",
+        "path": "saltwatch-2.2.3.ota.bin",
+        "release_url": "https://github.com/thomasgregg/saltwatch/releases/tag/v2.2.3",
+        "summary": "Adds consistent, task-matched icons throughout the local SaltWatch interface."
       }
     }
   ]
