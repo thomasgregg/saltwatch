@@ -4,6 +4,14 @@ All notable changes to SaltWatch are documented here.
 
 ## Unreleased
 
+## 2.2.1 - 2026-09-04
+
+- Updated the validated ESPHome toolchain from 2026.8.1 to 2026.8.2.
+- Reclaimed the ESP32 SRAM1 region as 40 KB of additional instruction RAM on
+  the ESP-IDF 5.5.5 factory-bootloader baseline.
+- Reorganized the local device page into Status, Calibration, Forecast and
+  Refill, and Diagnostics sections with task-oriented entity ordering.
+
 ## 2.2.0 - 2026-09-02
 
 - Rebuilt the Home Assistant notification blueprint around the canonical Salt

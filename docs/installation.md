@@ -116,7 +116,7 @@ Do not commit `secrets.yaml`.
 
 ## Command-line installation
 
-With ESPHome 2026.8.1 installed and `secrets.yaml` present:
+With ESPHome 2026.8.2 installed and `secrets.yaml` present:
 
 ```sh
 esphome config saltwatch.yaml

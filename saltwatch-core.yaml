@@ -1,5 +1,5 @@
 substitutions:
-  project_version: "2.2.0"
+  project_version: "2.2.1"
   sensor_min_cm: "5.0"
   sensor_max_cm: "120.0"
   minimum_calibration_span_cm: "10.0"
@@ -44,6 +44,11 @@ esp32:
   board: m5stack-atom
   framework:
     type: esp-idf
+    advanced:
+      # The ESP-IDF 5.5.5 factory bootloader supports reclaiming SRAM1 as
+      # instruction RAM. SaltWatch has no pre-2.2.1 installed-device baseline
+      # that needs compatibility with an older bootloader.
+      sram1_as_iram: true
 
 preferences:
   # Calibration changes are rare and should survive an immediate power loss.
@@ -65,10 +70,23 @@ api:
 # Intentionally open on the local network. Keep the device on a trusted LAN.
 web_server:
   port: 80
-  version: 2
+  version: 3
   local: true
   compression: gzip
   log: false
+  sorting_groups:
+    - id: sorting_group_status
+      name: "Status"
+      sorting_weight: 10
+    - id: sorting_group_calibration
+      name: "Calibration"
+      sorting_weight: 20
+    - id: sorting_group_forecast
+      name: "Forecast and Refill"
+      sorting_weight: 30
+    - id: sorting_group_diagnostics
+      name: "Diagnostics"
+      sorting_weight: 40
 
 ota:
   - platform: esphome
@@ -1206,6 +1224,9 @@ number:
     name: "Full Distance"
     id: full_distance
     entity_category: config
+    web_server:
+      sorting_group_id: sorting_group_calibration
+      sorting_weight: 20
     unit_of_measurement: "cm"
     device_class: distance
     mode: box
@@ -1250,6 +1271,9 @@ number:
     name: "Empty Distance"
     id: empty_distance
     entity_category: config
+    web_server:
+      sorting_group_id: sorting_group_calibration
+      sorting_weight: 40
     unit_of_measurement: "cm"
     device_class: distance
     mode: box
@@ -1294,6 +1318,9 @@ number:
     name: "Low Salt Threshold"
     id: low_salt_threshold
     entity_category: config
+    web_server:
+      sorting_group_id: sorting_group_forecast
+      sorting_weight: 30
     unit_of_measurement: "%"
     mode: box
     min_value: 5
@@ -1311,6 +1338,9 @@ button:
     name: "Set Current Distance as Full"
     id: set_current_distance_as_full
     entity_category: config
+    web_server:
+      sorting_group_id: sorting_group_calibration
+      sorting_weight: 30
     on_press:
       - if:
           condition:
@@ -1337,6 +1367,9 @@ button:
     name: "Set Current Distance as Empty"
     id: set_current_distance_as_empty
     entity_category: config
+    web_server:
+      sorting_group_id: sorting_group_calibration
+      sorting_weight: 50
     on_press:
       - if:
           condition:
@@ -1363,6 +1396,9 @@ button:
     name: "Record Salt Refill"
     id: record_salt_refill
     entity_category: config
+    web_server:
+      sorting_group_id: sorting_group_forecast
+      sorting_weight: 40
     on_press:
       - if:
           condition:
@@ -1431,6 +1467,9 @@ sensor:
   - platform: template
     name: "Distance to Salt"
     id: distance_to_salt
+    web_server:
+      sorting_group_id: sorting_group_calibration
+      sorting_weight: 10
     unit_of_measurement: "cm"
     device_class: distance
     state_class: measurement
@@ -1440,6 +1479,9 @@ sensor:
   - platform: template
     name: "Salt Level"
     id: salt_level
+    web_server:
+      sorting_group_id: sorting_group_status
+      sorting_weight: 20
     unit_of_measurement: "%"
     state_class: measurement
     accuracy_decimals: 1
@@ -1448,6 +1490,9 @@ sensor:
   - platform: template
     name: "Estimated Days Until Low Salt"
     id: estimated_days_until_low_salt
+    web_server:
+      sorting_group_id: sorting_group_forecast
+      sorting_weight: 10
     icon: mdi:calendar-clock
     unit_of_measurement: "d"
     device_class: duration
@@ -1458,6 +1503,9 @@ sensor:
   - platform: template
     name: "Last Recorded Refill"
     id: last_recorded_refill
+    web_server:
+      sorting_group_id: sorting_group_forecast
+      sorting_weight: 50
     icon: mdi:calendar-refresh
     device_class: timestamp
     accuracy_decimals: 0
@@ -1467,12 +1515,18 @@ sensor:
     name: "WiFi Signal"
     id: wifi_signal_db
     entity_category: diagnostic
+    web_server:
+      sorting_group_id: sorting_group_diagnostics
+      sorting_weight: 20
     update_interval: 60s
 
   - platform: template
     name: "Last Valid Measurement Age"
     id: last_valid_measurement_age
     entity_category: diagnostic
+    web_server:
+      sorting_group_id: sorting_group_diagnostics
+      sorting_weight: 10
     disabled_by_default: true
     unit_of_measurement: "s"
     device_class: duration
@@ -1485,32 +1539,50 @@ binary_sensor:
     name: "Low Salt"
     id: low_salt
     device_class: problem
+    web_server:
+      sorting_group_id: sorting_group_status
+      sorting_weight: 30
 
   - platform: template
     name: "Sensor Fault"
     id: sensor_fault
     device_class: problem
+    web_server:
+      sorting_group_id: sorting_group_status
+      sorting_weight: 50
 
   - platform: template
     name: "Calibration Required"
     id: calibration_required
     device_class: problem
+    web_server:
+      sorting_group_id: sorting_group_status
+      sorting_weight: 40
 
 text_sensor:
   - platform: template
     name: "Salt Status"
     id: salt_status
+    web_server:
+      sorting_group_id: sorting_group_status
+      sorting_weight: 10
     update_interval: never
 
   - platform: template
     name: "Calibration Details"
     id: calibration_details
     entity_category: diagnostic
+    web_server:
+      sorting_group_id: sorting_group_calibration
+      sorting_weight: 60
     update_interval: never
 
   - platform: template
     name: "Forecast Status"
     id: forecast_status
+    web_server:
+      sorting_group_id: sorting_group_forecast
+      sorting_weight: 20
     icon: mdi:chart-timeline-variant
     update_interval: never
 
@@ -1519,6 +1591,9 @@ text_sensor:
     id: forecast_details
     icon: mdi:information-outline
     entity_category: diagnostic
+    web_server:
+      sorting_group_id: sorting_group_forecast
+      sorting_weight: 70
     update_interval: never
 
   - platform: template
@@ -1526,6 +1601,9 @@ text_sensor:
     id: forecast_confidence
     icon: mdi:chart-bell-curve-cumulative
     entity_category: diagnostic
+    web_server:
+      sorting_group_id: sorting_group_forecast
+      sorting_weight: 60
     disabled_by_default: true
     update_interval: never
 

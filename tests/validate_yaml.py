@@ -218,6 +218,10 @@ def run() -> None:
         "platform": "template",
         "name": "Last Recorded Refill",
         "id": "last_recorded_refill",
+        "web_server": {
+            "sorting_group_id": "sorting_group_forecast",
+            "sorting_weight": 50,
+        },
         "icon": "mdi:calendar-refresh",
         "device_class": "timestamp",
         "accuracy_decimals": 0,
@@ -248,6 +252,51 @@ def run() -> None:
     assert globals_by_id["forecast_bucket_sample_count"]["restore_value"] is False
 
     core_text = Path("saltwatch-core.yaml").read_text()
+    assert core["esp32"]["framework"]["advanced"]["sram1_as_iram"] is True
+    assert core["web_server"]["version"] == 3
+    assert [group["name"] for group in core["web_server"]["sorting_groups"]] == [
+        "Status",
+        "Calibration",
+        "Forecast and Refill",
+        "Diagnostics",
+    ]
+    expected_web_groups = {
+        "sorting_group_status": {
+            "Salt Status",
+            "Salt Level",
+            "Low Salt",
+            "Calibration Required",
+            "Sensor Fault",
+        },
+        "sorting_group_calibration": {
+            "Distance to Salt",
+            "Full Distance",
+            "Set Current Distance as Full",
+            "Empty Distance",
+            "Set Current Distance as Empty",
+            "Calibration Details",
+        },
+        "sorting_group_forecast": {
+            "Estimated Days Until Low Salt",
+            "Forecast Status",
+            "Low Salt Threshold",
+            "Record Salt Refill",
+            "Last Recorded Refill",
+            "Forecast Confidence",
+            "Forecast Details",
+        },
+        "sorting_group_diagnostics": {
+            "Last Valid Measurement Age",
+            "WiFi Signal",
+        },
+    }
+    actual_web_groups = {group_id: set() for group_id in expected_web_groups}
+    for domain in ("number", "button", "sensor", "binary_sensor", "text_sensor"):
+        for entity in core[domain]:
+            if entity.get("name") and not entity.get("internal"):
+                group_id = entity["web_server"]["sorting_group_id"]
+                actual_web_groups[group_id].add(entity["name"])
+    assert actual_web_groups == expected_web_groups
     assert "forecast_bucket_sample_count) < 36" in core_text
     assert "forecast_daily_history_size: \"28\"" in core_text
     assert "forecast_minimum_decline_percent: \"2.0\"" in core_text

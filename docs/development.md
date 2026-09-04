@@ -49,9 +49,9 @@ web interface intentionally do not have credentials.
 
 ## ESPHome version
 
-SaltWatch 2.2.0 is validated with:
+SaltWatch 2.2.1 is validated with:
 
-- ESPHome 2026.8.1
+- ESPHome 2026.8.2
 - ESP-IDF 5.5.5
 - `m5stack-atom` board definition
 
@@ -60,7 +60,7 @@ Install the matching ESPHome CLI in an isolated environment if required:
 ```sh
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install "esphome==2026.8.1"
+python -m pip install "esphome==2026.8.2"
 ```
 
 ## Validate and compile
@@ -113,19 +113,19 @@ rg -n "web_server|reboot_timeout|api:|ota:|password:" \
 The published browser image is scanned for validation credentials, checked for
 the ESP32 image header, and hashed before and after GitHub Pages deployment.
 
-## Current v2.2.0 build results
+## Current v2.2.1 build results
 
 | Build | RAM | Application flash | Result |
 | --- | ---: | ---: | --- |
-| Production | 27.7% | 49.3% | Passed |
-| Browser installer | 27.8% | 49.9% | Passed |
+| Production | 27.7% | 53.0% | Passed |
+| Browser installer | 27.8% | 53.6% | Passed |
 
-The v2.2.0 hosted factory image is generated and verified as part of the
+The v2.2.1 hosted factory image is generated and verified as part of the
 release process. Its final size and SHA-256 are recorded below:
 
 ```text
-Size: 980,672 bytes
-SHA-256: 2a16d19db30bfaa7770bdb5b4948619fdb419fb65f0737e40cbdf4f163ede159
+Size: 1,048,752 bytes
+SHA-256: af94f668bb19f9c323cf254fdc4c42e3fc1eaf0c91515eaf4653ee04d842a229
 ```
 
 ## Configuration audit expectations

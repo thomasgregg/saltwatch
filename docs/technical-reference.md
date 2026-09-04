@@ -14,7 +14,7 @@ lambdas and watchdog scripts; it does not use a custom C++ component.
 | Node name | `saltwatch` |
 | Friendly name | `SaltWatch` |
 | ESPHome project | `saltwatch.salt-monitor` |
-| Release | 2.2.0 |
+| Release | 2.2.1 |
 | Board | `m5stack-atom` |
 | Framework | ESP-IDF |
 | I²C | SDA GPIO26, SCL GPIO32 |
@@ -178,6 +178,8 @@ higher-priority problem is active.
 - The production native API uses encryption.
 - The local web interface is self-contained and does not load its assets from
   the internet.
+- The local web interface uses ESPHome web-server version 3 with task-oriented
+  Status, Calibration, Forecast and Refill, and Diagnostics groups.
 - Browser log streaming is disabled.
 - Web UI, web OTA, and native OTA are intentionally passwordless.
 - No fallback access point or captive portal is enabled.

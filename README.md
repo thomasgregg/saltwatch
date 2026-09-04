@@ -234,9 +234,9 @@ design is documented in the [technical reference](docs/technical-reference.md).
 
 After Wi-Fi provisioning, open the MAC-suffixed address shown by ESPHome, such
 as `http://saltwatch-a1b2c3.local/`, or use the device IP. The local interface
-shows the SaltWatch entities, supports calibration controls, and accepts manual
-OTA firmware uploads. ESPHome Device Builder can also install updates
-wirelessly.
+organizes the device into Status, Calibration, Forecast and Refill, and
+Diagnostics sections. It supports calibration controls and manual OTA firmware
+uploads. ESPHome Device Builder can also install updates wirelessly.
 
 The web interface and both OTA paths intentionally have no password. Anyone who
 can reach the device can change calibration or replace its firmware. Keep
@@ -266,7 +266,7 @@ API communication is encrypted after Device Builder adoption.
 
 SaltWatch is built for the M5Stack ATOM Lite C008 using the `m5stack-atom`
 board definition, ESP-IDF, GPIO26/GPIO32 I²C, and the VL53L0X at address `0x29`
-in long-range mode. Release builds are validated with ESPHome 2026.8.1 and
+in long-range mode. Release builds are validated with ESPHome 2026.8.2 and
 ESP-IDF 5.5.5.
 
 ## License
