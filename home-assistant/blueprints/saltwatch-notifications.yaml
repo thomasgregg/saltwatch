@@ -175,7 +175,8 @@ actions:
             data:
               title: "{{ device_name }}: refill salt"
               message: >-
-                Salt is at {{ states(salt_level_entity) }}%. Refill the
+                Salt is at
+                {{ states(salt_level_entity) | float | round(0) | int }}%. Refill the
                 water-softener brine tank.
       - conditions:
           - condition: trigger
@@ -224,7 +225,7 @@ actions:
               title: "{{ device_name }}: salt may run low soon"
               message: >-
                 Based on the recent trend, SaltWatch estimates about
-                {{ states(forecast_entity) }} days until the configured low-salt
+                {{ states(forecast_entity) | float | round(0) | int }} days until the configured low-salt
                 threshold. This is an estimate; check the tank before relying on it.
       - conditions:
           - condition: trigger
@@ -241,7 +242,8 @@ actions:
             data:
               title: "{{ device_name }}: salt is still low"
               message: >-
-                Low Salt is still active at {{ states(salt_level_entity) }}%.
+                Low Salt is still active at
+                {{ states(salt_level_entity) | float | round(0) | int }}%.
                 Refill the water-softener brine tank.
       - conditions:
           - condition: trigger
@@ -259,7 +261,7 @@ actions:
               title: "{{ device_name }}: condition cleared"
               message: >-
                 The low-salt warning has cleared. Salt Level is
-                {{ states(salt_level_entity) }}%.
+                {{ states(salt_level_entity) | float | round(0) | int }}%.
       - conditions:
           - condition: trigger
             id: recovered

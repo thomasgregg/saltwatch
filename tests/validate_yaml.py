@@ -135,6 +135,12 @@ def run() -> None:
     assert "trigger.from_state.state == 'Low Salt'" in blueprint_text
     assert "trigger.from_state.state == 'Sensor Fault'" in blueprint_text
     assert "trigger.from_state.state == 'Calibration Required'" in blueprint_text
+    assert blueprint_text.count(
+        "states(salt_level_entity) | float | round(0) | int"
+    ) == 3
+    assert (
+        "states(forecast_entity) | float | round(0) | int" in blueprint_text
+    )
     for removed_input in (
         "low_salt_entity",
         "sensor_fault_entity",

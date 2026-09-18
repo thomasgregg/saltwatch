@@ -4,6 +4,10 @@ All notable changes to SaltWatch are documented here.
 
 ## Unreleased
 
+## 2.2.5 - 2026-09-18
+
+- Rounded salt percentages and forecast day counts in Home Assistant
+  notifications to whole numbers for clearer mobile alerts.
 - Added a privacy-safe screenshot of the organized local SaltWatch web
   interface to the README.
 - Added a full-width annotated installation gallery ahead of the Home Assistant
