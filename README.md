@@ -291,7 +291,7 @@ API communication is encrypted after Device Builder adoption.
 
 SaltWatch is built for the M5Stack ATOM Lite C008 using the `m5stack-atom`
 board definition, ESP-IDF, GPIO26/GPIO32 I²C, and the VL53L0X at address `0x29`
-in long-range mode. Release builds are validated with ESPHome 2026.8.2 and
+in long-range mode. Release builds are validated with ESPHome 2026.9.0 and
 ESP-IDF 5.5.5.
 
 ## License

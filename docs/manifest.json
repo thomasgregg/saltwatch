@@ -1,6 +1,6 @@
 {
   "name": "SaltWatch",
-  "version": "2.2.5",
+  "version": "2.2.6",
   "home_assistant_domain": "esphome",
   "new_install_prompt_erase": true,
   "builds": [
@@ -8,15 +8,15 @@
       "chipFamily": "ESP32",
       "parts": [
         {
-          "path": "saltwatch-2.2.5.factory.bin",
+          "path": "saltwatch-2.2.6.factory.bin",
           "offset": 0
         }
       ],
       "ota": {
-        "md5": "d9517005bd7eb683fb26a5bea4cb1652",
-        "path": "saltwatch-2.2.5.ota.bin",
-        "release_url": "https://github.com/thomasgregg/saltwatch/releases/tag/v2.2.5",
-        "summary": "Rounds notification values and adds a clearer visual installation guide."
+        "md5": "cefbae3114d5f01182c40af6ea53e61a",
+        "path": "saltwatch-2.2.6.ota.bin",
+        "release_url": "https://github.com/thomasgregg/saltwatch/releases/tag/v2.2.6",
+        "summary": "Aligns official SaltWatch firmware with ESPHome 2026.9.0 to prevent an immediate second firmware update prompt."
       }
     }
   ]

@@ -4,6 +4,12 @@ All notable changes to SaltWatch are documented here.
 
 ## Unreleased
 
+## 2.2.6 - 2026-09-19
+
+- Updated the validated and published firmware toolchain from ESPHome 2026.8.2
+  to 2026.9.0 so installing an official SaltWatch release does not immediately
+  prompt for a second ESPHome Device Builder firmware update.
+
 ## 2.2.5 - 2026-09-18
 
 - Rounded salt percentages and forecast day counts in Home Assistant
