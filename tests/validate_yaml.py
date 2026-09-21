@@ -155,6 +155,39 @@ def run() -> None:
     assert core["i2c"] == {"sda": "GPIO26", "scl": "GPIO32", "scan": True}
     assert core["wifi"]["reboot_timeout"] == "0s"
     assert core["api"]["reboot_timeout"] == "0s"
+    led = core["light"][0]
+    assert led["platform"] == "esp32_rmt_led_strip"
+    assert led["pin"] == "GPIO27"
+    assert led["num_leds"] == 1
+    assert led["chipset"] == "SK6812"
+    assert led["channel_colors"] == "GRB"
+    assert led["internal"] is True
+    assert "name" not in led
+    assert led["restore_mode"] == "ALWAYS_OFF"
+    assert led["default_transition_length"] == "0s"
+    blink = led["effects"][0]["strobe"]
+    assert blink["name"] == "Low Salt Blink"
+    assert blink["colors"] == [
+        {
+            "state": True,
+            "brightness": "30%",
+            "red": "100%",
+            "green": "0%",
+            "blue": "0%",
+            "duration": "250ms",
+        },
+        {"state": False, "duration": "1750ms"},
+    ]
+    led_switch = core["switch"][0]
+    assert led_switch["name"] == "Low Salt LED Alert"
+    assert led_switch["entity_category"] == "config"
+    assert led_switch["restore_mode"] == "RESTORE_DEFAULT_OFF"
+    assert led_switch["optimistic"] is True
+    assert not led_switch.get("disabled_by_default", False)
+    for event in ("on_turn_on", "on_turn_off"):
+        assert led_switch[event] == [{"script.execute": "update_low_salt_led"}]
+    evaluate = next(s for s in core["script"] if s["id"] == "evaluate_state")
+    assert evaluate["then"][1] == {"script.execute": "update_low_salt_led"}
     assert "auth" not in core["web_server"]
     assert all("password" not in item for item in core["ota"])
     assert [item["platform"] for item in core["ota"]] == [
@@ -188,6 +221,7 @@ def run() -> None:
     }
     assert emulator["host"]["mac_address"] == "06:53:41:4c:54:01"
     assert emulator["api"]["reboot_timeout"] == "0s"
+    assert "light" not in emulator  # The host emulator has no ESP32 LED driver.
     emulator_entities = {
         item["name"]
         for domain in ("number", "sensor", "text_sensor")
@@ -286,10 +320,19 @@ def run() -> None:
     assert [group["name"] for group in core["web_server"]["sorting_groups"]] == [
         "Status",
         "Calibration",
+        "Low Salt Alert",
         "Forecast and Refill",
         "Device Maintenance",
         "Diagnostics",
     ]
+    group_weights = [
+        group["sorting_weight"] for group in core["web_server"]["sorting_groups"]
+    ]
+    assert group_weights == sorted(set(group_weights))
+    threshold = next(n for n in core["number"] if n["id"] == "low_salt_threshold")
+    assert threshold["web_server"]["sorting_weight"] < (
+        led_switch["web_server"]["sorting_weight"]
+    )
     expected_web_groups = {
         "sorting_group_status": {
             "Salt Status",
@@ -306,10 +349,13 @@ def run() -> None:
             "Set Current Distance as Empty",
             "Calibration Details",
         },
+        "sorting_group_low_salt_alert": {
+            "Low Salt Threshold",
+            "Low Salt LED Alert",
+        },
         "sorting_group_forecast": {
             "Estimated Days Until Low Salt",
             "Forecast Status",
-            "Low Salt Threshold",
             "Record Salt Refill",
             "Last Recorded Refill",
             "Forecast Confidence",
@@ -331,6 +377,8 @@ def run() -> None:
         "binary_sensor",
         "text_sensor",
         "update",
+        "switch",
+        "light",
     ):
         for entity in core[domain]:
             if entity.get("name") and not entity.get("internal"):
@@ -342,6 +390,7 @@ def run() -> None:
         "Full Distance": "mdi:arrow-up",
         "Empty Distance": "mdi:arrow-down",
         "Low Salt Threshold": "mdi:gauge",
+        "Low Salt LED Alert": "mdi:led-on",
         "Set Current Distance as Full": "mdi:target",
         "Set Current Distance as Empty": "mdi:target",
         "Record Salt Refill": "mdi:refresh",
@@ -368,6 +417,8 @@ def run() -> None:
         "binary_sensor",
         "text_sensor",
         "update",
+        "switch",
+        "light",
     ):
         for entity in core[domain]:
             if entity.get("name") and not entity.get("internal"):

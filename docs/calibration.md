@@ -94,6 +94,28 @@ Invalid or zero spans are rejected before calculation.
 For example, with a 20% threshold, Low Salt activates at 20% or below and clears
 only above 25%.
 
+## Optional onboard LED alert
+
+After calibration, open **Low Salt Alert** in the local web interface. Set
+**Low Salt Threshold** and enable **Low Salt LED Alert** if you want the ATOM
+Lite's built-in LED to warn you locally. Home Assistant exposes the same
+switch in the device's configuration entities.
+
+- The switch is off by default and remembers your choice across normal
+  restarts and firmware updates.
+- On means the warning is enabled, not that the LED is currently illuminated.
+- While Low Salt is active, the LED gives a dim red blink for 250 ms every two
+  seconds. It follows the existing threshold and five-point hysteresis.
+- Changing the threshold or enabling/disabling the switch takes effect
+  immediately using the current evaluated Low Salt state.
+- Turning the switch off stops the blinking without disabling Low Salt,
+  changing the threshold, or affecting Home Assistant notifications.
+- Startup, unavailable readings, invalid calibration, and sensor faults leave
+  the LED off. Darkness is not a confirmation that the sensor is healthy.
+- After a restart, a fresh valid measurement is required before blinking can
+  begin; the previous warning state is not restored.
+- The warning runs on the device without Wi-Fi or Home Assistant.
+
 ## Understanding Salt Status
 
 Salt Status summarizes the underlying entities in this priority order:

@@ -25,6 +25,7 @@ for the thin Grove cable. It does not require a drilled hole or rubber grommet.
 | Grove SCL | GPIO32 |
 | VL53L0X address | `0x29` |
 | Sensor mode | Long range |
+| Onboard RGB LED | One SK6812 on GPIO27, GRB channel order |
 | Accepted installed range | 5–120 cm |
 
 Official sources:
@@ -111,6 +112,26 @@ Do not rely on low-salt alerts until this checklist passes.
 25. On the next release, review and approve one managed update and confirm Wi-Fi,
     API encryption, calibration, and forecast state survive the reboot.
 26. Observe the installed system for several days before relying on alerts.
+
+### Optional onboard LED alert
+
+- Confirm **Low Salt LED Alert** is off on a new installation and is visible
+  beside **Low Salt Threshold** in the web interface's **Low Salt Alert** section.
+- Enable it while salt is sufficient; the switch stays on but the LED stays off.
+- With a valid low reading, confirm the built-in LED blinks dim red for about
+  250 ms every two seconds. Repeat using a non-default threshold.
+- Confirm blinking follows the Low Salt entity at the exact threshold and
+  clears only above the threshold plus five points.
+- Disable it while blinking; confirm it stops immediately while Low Salt
+  remains active. Re-enable it and confirm blinking resumes.
+- During blinking, disconnect/block the sensor or invalidate calibration;
+  confirm the LED stops when Low Salt clears and resumes after valid low
+  measurements recover.
+- Restart while enabled; confirm the preference survives and the LED only
+  starts blinking after a fresh valid low measurement. Repeat after an OTA
+  update and confirm calibration and forecast history survive too.
+- Disconnect Wi-Fi and Home Assistant; verify the warning still follows salt
+  level, including recovery after refill.
 
 ### Forecast operation
 

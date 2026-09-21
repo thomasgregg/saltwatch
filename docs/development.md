@@ -50,7 +50,7 @@ web interface intentionally do not have credentials.
 
 ## ESPHome version
 
-SaltWatch 2.2.6 is validated with:
+SaltWatch 2.3.0 is validated with:
 
 - ESPHome 2026.9.0
 - ESP-IDF 5.5.5
@@ -77,8 +77,15 @@ esphome compile saltwatch-webinstall.yaml
 esphome config saltwatch-emulator.yaml
 esphome compile saltwatch-emulator.yaml
 python3 tests/test_logic.py
+python3 tests/test_led.py
 python3 tests/validate_yaml.py
 ```
+
+The LED regression check requires a native C++ compiler (`c++`). It extracts
+and executes the state-evaluation and LED-control lambdas from the firmware
+YAML, checking boundary and failure behavior without rewriting those algorithms
+in Python. Physical LED color, brightness, timing, and persistence still need
+the hardware acceptance checklist.
 
 Run the emulator interactively with `esphome run saltwatch-emulator.yaml`, then
 add the ESPHome integration manually in Home Assistant using the development
@@ -117,22 +124,22 @@ The published browser and OTA images are scanned for validation credentials,
 checked for the ESP32 image header, and hashed before and after GitHub Pages
 deployment. The manifest's OTA MD5 must match the published OTA image.
 
-## Current v2.2.6 build results
+## Current v2.3.0 build results
 
 | Build | RAM | Application flash | Result |
 | --- | ---: | ---: | --- |
-| Production | 28.6% | 55.1% | Passed |
-| Browser installer | 28.7% | 55.6% | Passed |
+| Production | 29.3% | 56.9% | Passed |
+| Browser installer | 29.4% | 57.4% | Passed |
 
-The v2.2.6 hosted images are generated and verified as part of the release
+The v2.3.0 hosted images are generated and verified as part of the release
 process. Their final sizes and SHA-256 hashes are recorded below:
 
 ```text
-Factory size: 1,086,656 bytes
-Factory SHA-256: 0453185ae839d6807befbab6a731d273c5548f2b5b4523936e1424c912430d5e
-OTA size: 1,021,120 bytes
-OTA MD5: cefbae3114d5f01182c40af6ea53e61a
-OTA SHA-256: d16e7f9a38fc736f283f1ea0add6da5b54239e7f094a6c71a1ee5396f12e90bf
+Factory size: 1,119,280 bytes
+Factory SHA-256: 03cc824f433aba239eb0ad92a46bbaef37c50b22f3a8ae5d1eea9dc3515d1b56
+OTA size: 1,053,744 bytes
+OTA MD5: 94e371fbe51737be2d30335aabb49e4a
+OTA SHA-256: 45835f447dd11b167cb7b9ca57b5e59ba73e157bc47a6aedcfb3605f3c3940c2
 ```
 
 ## Configuration audit expectations

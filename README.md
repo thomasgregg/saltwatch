@@ -157,6 +157,7 @@ rules, manual calibration, and low-salt behavior.
 | **Full Distance** | Persistent full-level calibration value. |
 | **Empty Distance** | Persistent empty-level calibration value. |
 | **Low Salt Threshold** | Persistent warning threshold; default 20%. |
+| **Low Salt LED Alert** | Optional onboard LED warning, following Low Salt and its configured threshold; off by default. |
 | **Set Current Distance as Full** | Captures the current filtered distance as full. |
 | **Set Current Distance as Empty** | Captures the current filtered distance as empty. |
 | **Record Salt Refill** | Starts a new forecast cycle after a small or unusual refill that was not detected automatically. |
@@ -224,6 +225,14 @@ synchronization.
 
 ## Notifications
 
+For a local visual warning, enable **Low Salt LED Alert** under **Low Salt
+Alert** in the device's web interface, or in the SaltWatch device's
+configuration entities in Home Assistant. The ATOM Lite's built-in LED blinks
+red while **Low Salt** is active, using your **Low Salt Threshold** and its
+existing hysteresis. The setting is remembered, works without Home Assistant
+or Wi-Fi, and is off by default. An unlit LED does not confirm sensor health;
+faults and invalid calibration suppress this low-salt warning.
+
 The optional Home Assistant blueprint follows Salt Status priority so fault,
 calibration, and low-salt conditions cannot generate competing alerts. It also
 supports device-named forecast and recovery messages plus one optional
@@ -249,8 +258,10 @@ design is documented in the [technical reference](docs/technical-reference.md).
 
 After Wi-Fi provisioning, open the MAC-suffixed address shown by ESPHome, such
 as `http://saltwatch-a1b2c3.local/`, or use the device IP. The local interface
-organizes the device into Status, Calibration, Forecast and Refill, and
-Device Maintenance, and Diagnostics sections. The **SaltWatch Firmware Update**
+organizes the device into Status, Calibration, Low Salt Alert, Forecast and
+Refill, Device Maintenance, and Diagnostics sections. Low Salt Alert groups
+the existing threshold with the optional onboard LED setting. The
+**SaltWatch Firmware Update**
 entity checks the official SaltWatch release manifest every six hours and
 offers an update only when a newer release is available; installation always
 requires explicit approval. Home Assistant may also show a separate, normally
@@ -262,6 +273,8 @@ Device Builder path only for customized firmware or recovery.
 <p align="center">
   <img src="docs/images/saltwatch-web-interface.png" alt="SaltWatch local web interface showing the Status, Calibration, Forecast and Refill, Device Maintenance, and Diagnostics sections" width="684">
 </p>
+
+The screenshot shows release 2.2.6, before the Low Salt Alert section was added.
 
 The web interface and all OTA paths intentionally have no password. Anyone who
 can reach the device can change calibration or replace its firmware. Keep

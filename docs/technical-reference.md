@@ -14,11 +14,12 @@ lambdas and watchdog scripts; it does not use a custom C++ component.
 | Node name | `saltwatch` |
 | Friendly name | `SaltWatch` |
 | ESPHome project | `saltwatch.salt-monitor` |
-| Release | 2.2.6 |
+| Release | 2.3.0 |
 | Board | `m5stack-atom` |
 | Framework | ESP-IDF |
 | I²C | SDA GPIO26, SCL GPIO32 |
 | Sensor | VL53L0X at `0x29`, long-range mode |
+| Onboard LED | One SK6812 RGB LED on GPIO27, GRB channel order |
 
 Entity names are intentionally stable so updates preserve Home Assistant entity
 registry entries.
@@ -126,6 +127,31 @@ Low Salt is forced off whenever:
 - Calibration Required is active; or
 - Salt Level is unavailable.
 
+## Onboard low-salt LED
+
+The ATOM Lite C008 LED uses ESPHome's `esp32_rmt_led_strip` driver. It is an
+internal light, initialized with `ALWAYS_OFF` and no transition. The public
+**Low Salt LED Alert** configuration switch uses `RESTORE_DEFAULT_OFF`: only
+the user's enable/disable preference is persistent.
+
+The LED controller reads that preference and the existing **Low Salt** binary
+sensor after each state evaluation and whenever the switch changes. It does
+not calculate another threshold or modify measurement, hysteresis, calibration,
+forecasting, or fault state. Unknown Low Salt state suppresses blinking.
+
+An enabled low-salt warning starts a built-in strobe effect: red at 30%
+brightness for 250 ms, then dark for 1750 ms. The effect keeps the logical
+light on during its dark phase. The controller checks that logical state to
+avoid restarting the effect on repeated evaluations. Light commands disable
+persistence and target only the internal light; blink steps do not write flash
+or generate Home Assistant state changes. Disabling the preference or clearing
+Low Salt stops the effect and turns the LED off without a fade.
+
+The preference and threshold appear together in **Low Salt Alert** in the web
+interface. The switch is a configuration entity in Home Assistant; the RGB
+light itself is not exposed. The host emulator does not include this physical
+LED driver.
+
 ## Status priority
 
 Salt Status is derived from the underlying entities in exactly this order:
@@ -151,6 +177,7 @@ higher-priority problem is active.
 | Full Distance | Number, cm | 5–120 cm, 0.1 cm steps, persistent; editing completes full calibration. |
 | Empty Distance | Number, cm | 5–120 cm, 0.1 cm steps, persistent; editing completes empty calibration. |
 | Low Salt Threshold | Number, % | 5–50%, whole-percent steps, persistent, default 20%. |
+| Low Salt LED Alert | Configuration switch | Opt-in persistent preference; onboard LED follows Low Salt while enabled. |
 | Set Current Distance as Full | Button | Captures only a valid filtered distance. |
 | Set Current Distance as Empty | Button | Captures only a valid filtered distance. |
 | Record Salt Refill | Button | Preserves a trustworthy learned rate and starts a clean forecast cycle. |

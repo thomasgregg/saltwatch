@@ -1,6 +1,6 @@
 {
   "name": "SaltWatch",
-  "version": "2.2.6",
+  "version": "2.3.0",
   "home_assistant_domain": "esphome",
   "new_install_prompt_erase": true,
   "builds": [
@@ -8,15 +8,15 @@
       "chipFamily": "ESP32",
       "parts": [
         {
-          "path": "saltwatch-2.2.6.factory.bin",
+          "path": "saltwatch-2.3.0.factory.bin",
           "offset": 0
         }
       ],
       "ota": {
-        "md5": "cefbae3114d5f01182c40af6ea53e61a",
-        "path": "saltwatch-2.2.6.ota.bin",
-        "release_url": "https://github.com/thomasgregg/saltwatch/releases/tag/v2.2.6",
-        "summary": "Aligns official SaltWatch firmware with ESPHome 2026.9.0 to prevent an immediate second firmware update prompt."
+        "md5": "94e371fbe51737be2d30335aabb49e4a",
+        "path": "saltwatch-2.3.0.ota.bin",
+        "release_url": "https://github.com/thomasgregg/saltwatch/releases/tag/v2.3.0",
+        "summary": "Adds an optional onboard low-salt LED alert using your configured threshold, with a new Low Salt Alert section in the web interface."
       }
     }
   ]

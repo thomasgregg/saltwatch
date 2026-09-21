@@ -17,6 +17,9 @@ jobs:
       - name: Run logic regression checks
         run: python3 tests/test_logic.py
 
+      - name: Check firmware LED behavior
+        run: python3 tests/test_led.py
+
       - name: Validate Home Assistant YAML and release metadata
         run: python3 tests/validate_yaml.py
 

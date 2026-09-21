@@ -4,6 +4,18 @@ All notable changes to SaltWatch are documented here.
 
 ## Unreleased
 
+## 2.3.0 - 2026-09-21
+
+- Added an optional **Low Salt LED Alert** configuration switch for the ATOM
+  Lite's onboard LED. It defaults off, remembers the user's preference, and
+  blinks red using the existing Low Salt state, configurable threshold, and
+  hysteresis, including while Home Assistant or Wi-Fi is offline.
+- Added a **Low Salt Alert** web section after Calibration, grouping the
+  existing threshold with the LED switch without changing the threshold's
+  identity or behavior.
+- Added checks that execute the actual state and LED firmware lambdas for
+  threshold boundaries, switch changes, faults, calibration, and restarts.
+
 ## 2.2.6 - 2026-09-19
 
 - Updated the validated and published firmware toolchain from ESPHome 2026.8.2

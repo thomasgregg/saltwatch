@@ -1,5 +1,5 @@
 substitutions:
-  project_version: "2.2.6"
+  project_version: "2.3.0"
   sensor_min_cm: "5.0"
   sensor_max_cm: "120.0"
   minimum_calibration_span_cm: "10.0"
@@ -81,6 +81,9 @@ web_server:
     - id: sorting_group_calibration
       name: "Calibration"
       sorting_weight: 20
+    - id: sorting_group_low_salt_alert
+      name: "Low Salt Alert"
+      sorting_weight: 25
     - id: sorting_group_forecast
       name: "Forecast and Refill"
       sorting_weight: 30
@@ -122,6 +125,48 @@ i2c:
   sda: GPIO26
   scl: GPIO32
   scan: true
+
+# The ATOM Lite C008's onboard RGB LED is independent of the Grove sensor.
+# Only the alert preference is public/persistent; never restore an old warning.
+light:
+  - platform: esp32_rmt_led_strip
+    id: low_salt_led
+    internal: true
+    pin: GPIO27
+    num_leds: 1
+    chipset: SK6812
+    channel_colors: GRB
+    restore_mode: ALWAYS_OFF
+    default_transition_length: 0s
+    effects:
+      - strobe:
+          name: "Low Salt Blink"
+          colors:
+            - state: true
+              brightness: 30%
+              red: 100%
+              green: 0%
+              blue: 0%
+              duration: 250ms
+            - state: false
+              duration: 1750ms
+
+switch:
+  - platform: template
+    name: "Low Salt LED Alert"
+    id: low_salt_led_alert
+    icon: mdi:led-on
+    entity_category: config
+    web_server:
+      sorting_group_id: sorting_group_low_salt_alert
+      sorting_weight: 20
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    # These callbacks run after the switch publishes its new preference.
+    on_turn_on:
+      - script.execute: update_low_salt_led
+    on_turn_off:
+      - script.execute: update_low_salt_led
 
 # Forecast learning uses Home Assistant's clock for durable daily timestamps.
 # Core sensing, calibration, fault handling, and an already learned forecast do
@@ -347,6 +392,28 @@ globals:
     initial_value: "false"
 
 script:
+  - id: update_low_salt_led
+    then:
+      - lambda: |-
+          const bool should_blink = id(low_salt_led_alert).state &&
+              id(low_salt).has_state() && id(low_salt).state;
+          // Strobe keeps the logical light on even during its dark phase.
+          // Repeated evaluations must not restart it or create flash writes.
+          if (should_blink == id(low_salt_led).remote_values.is_on()) {
+            return;
+          }
+          auto call = id(low_salt_led).make_call();
+          call.set_state(should_blink);
+          call.set_save(false);
+          if (should_blink) {
+            call.set_rgb(1.0f, 0.0f, 0.0f);
+            call.set_brightness(0.30f);
+            call.set_effect("Low Salt Blink");
+          }
+          // A normal off command stops the effect automatically. Explicitly
+          // setting an effect while turning off is rejected by ESPHome.
+          call.perform();
+
   - id: forecast_publish_refill_timestamp
     mode: restart
     then:
@@ -1234,6 +1301,7 @@ script:
           if (!id(salt_status).has_state() || id(salt_status).state != status) {
             id(salt_status).publish_state(status);
           }
+      - script.execute: update_low_salt_led
       - if:
           condition:
             lambda: return id(forecast_reset_requested);
@@ -1346,8 +1414,8 @@ number:
     icon: mdi:gauge
     entity_category: config
     web_server:
-      sorting_group_id: sorting_group_forecast
-      sorting_weight: 30
+      sorting_group_id: sorting_group_low_salt_alert
+      sorting_weight: 10
     unit_of_measurement: "%"
     mode: box
     min_value: 5
