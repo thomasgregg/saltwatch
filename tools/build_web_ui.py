@@ -28,8 +28,8 @@ def main():
     script = replace_once(script, marker, marker + "\n" + css)
 
     # Keep the native multipart upload form owned by esp-app, but project it
-    # into the maintenance group through a named slot. Lit retains the form,
-    # selected file, and disclosure state when sensor readings rerender.
+    # immediately after the maintenance group through a named slot. Lit retains
+    # the form and selected file when sensor readings rerender.
     script = replace_once(
         script,
         '<esp-entity-table .scheme="${this.scheme}"></esp-entity-table>${this.renderOta()}',
@@ -38,8 +38,8 @@ def main():
     script = replace_once(
         script,
         '</div>`)}</div>`)} ${this.renderShowAll()}',
-        '</div>`)}${e===`Device Maintenance`?D`<slot name="saltwatch-maintenance"></slot>`:k}'
-        '</div>`)} ${this.renderShowAll()}',
+        '</div>`)}</div>${e===`Device Maintenance`?D`<slot name="saltwatch-maintenance"></slot>`:k}'
+        '`)} ${this.renderShowAll()}',
     )
     script = replace_once(
         script,
@@ -47,15 +47,13 @@ def main():
         'action="${hr()}/update" enctype="multipart/form-data" class="tab-container">'
         '<input class="btn" type="file" name="update" accept="application/octet-stream"> '
         '<input class="btn" type="submit" value="Update"></form>`',
-        'D`<details slot="saltwatch-maintenance" class="manual-update">'
-        '<summary><span>Manual update</span></summary>'
-        '<form method="POST" action="${hr()}/update" enctype="multipart/form-data">'
-        '<label for="manual-firmware-file">Upload an OTA .bin file from your computer.</label>'
-        '<div class="manual-update-controls">'
+        'D`<div slot="saltwatch-maintenance">'
+        '<div class="tab-header">Firmware Upload</div>'
+        '<form class="tab-container manual-update" '
+        'method="POST" action="${hr()}/update" enctype="multipart/form-data">'
         '<input id="manual-firmware-file" class="btn" type="file" name="update" '
-        'accept=".bin,application/octet-stream" required> '
-        '<input class="btn" type="submit" value="Upload firmware">'
-        '</div></form></details>`',
+        'aria-label="OTA firmware file (.bin)" accept=".bin,application/octet-stream" required> '
+        '<input class="btn" type="submit" value="Update"></form></div>`',
     )
     maintenance_css = (web / "maintenance.css").read_text()
     assert "`" not in maintenance_css and "${" not in maintenance_css

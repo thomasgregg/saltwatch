@@ -121,8 +121,8 @@ API is separate and remains protected after adoption.
    image, normally `firmware.bin` or `firmware.ota.bin`.
 2. Open the MAC-suffixed address shown by ESPHome, such as
    `http://saltwatch-a1b2c3.local/`, or use the device IP.
-3. In **Device Maintenance**, expand **Manual update**.
-4. Select the OTA image and choose **Upload firmware**.
+3. Use the file picker in **Firmware Upload**, directly below **Device Maintenance**.
+4. Select the OTA image and choose **Update**.
 5. Keep power connected until SaltWatch reboots.
 
 Never upload `firmware.factory.bin` through the local web updater. A factory

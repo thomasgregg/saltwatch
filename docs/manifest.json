@@ -1,6 +1,6 @@
 {
   "name": "SaltWatch",
-  "version": "2.3.4",
+  "version": "2.3.5",
   "home_assistant_domain": "esphome",
   "new_install_prompt_erase": true,
   "builds": [
@@ -8,15 +8,15 @@
       "chipFamily": "ESP32",
       "parts": [
         {
-          "path": "saltwatch-2.3.4.factory.bin",
+          "path": "saltwatch-2.3.5.factory.bin",
           "offset": 0
         }
       ],
       "ota": {
-        "md5": "52f836add2e2fd4a2a95927dbf0d1c72",
-        "path": "saltwatch-2.3.4.ota.bin",
-        "release_url": "https://github.com/thomasgregg/saltwatch/releases/tag/v2.3.4",
-        "summary": "Groups manual firmware uploads under Device Maintenance in an expandable Manual update row."
+        "md5": "e8bff0269bae737c5cc9e37c693089fc",
+        "path": "saltwatch-2.3.5.ota.bin",
+        "release_url": "https://github.com/thomasgregg/saltwatch/releases/tag/v2.3.5",
+        "summary": "Restores standard upload controls in a separate Firmware Upload section below Device Maintenance."
       }
     }
   ]

@@ -2,7 +2,11 @@
 
 All notable changes to SaltWatch are documented here.
 
-## Unreleased
+## 2.3.5 - 2026-09-22
+
+- Restored ESPHome's original file picker and **Update** button in a separate
+  **Firmware Upload** section directly below **Device Maintenance**, without
+  a disclosure or helper sentence.
 
 ## 2.3.4 - 2026-09-22
 

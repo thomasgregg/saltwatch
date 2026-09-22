@@ -5,12 +5,13 @@
 unbroken number inputs, and a narrow-screen layout that puts number controls
 below their full labels.
 
-The native OTA upload form is placed in a collapsed **Manual update** row in
-**Device Maintenance**, below the version and official release updater.
-`maintenance.css` styles this row. A named slot keeps the form owned by the
-original component, preserving its selected file and expanded state when live
-readings refresh. Uploads still use ESPHome's native multipart POST endpoint,
-including when the interface is served under a URL prefix. The row is shown
+The native OTA upload form has its own **Firmware Upload** section immediately
+below **Device Maintenance**, using the original file picker and **Update**
+button without a disclosure or helper sentence.
+`maintenance.css` keeps the file picker within narrow screens. A named slot
+keeps the form owned by the original component, preserving its selected file
+when live readings refresh. Uploads still use ESPHome's native multipart POST endpoint,
+including when the interface is served under a URL prefix. The section is shown
 only when web OTA is enabled.
 
 The firmware embeds this script through `web_server.js_include` and serves it
