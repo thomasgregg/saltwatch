@@ -264,8 +264,10 @@ After Wi-Fi provisioning, open the MAC-suffixed address shown by ESPHome, such
 as `http://saltwatch-a1b2c3.local/`, or use the device IP. The local interface
 organizes the device into Status, Calibration, Low Salt Alert, Forecast and
 Refill, Device Maintenance, and Diagnostics sections. Low Salt Alert groups
-the existing threshold with the optional onboard LED switch and brightness. The
-**SaltWatch Firmware Update**
+the existing threshold with the optional onboard LED switch and brightness.
+**Firmware Version** under **Device Maintenance** shows the installed SaltWatch
+release, taken directly from the firmware at startup. It is also available as a
+diagnostic sensor in Home Assistant. The **SaltWatch Firmware Update**
 entity checks the official SaltWatch release manifest every six hours and
 offers an update only when a newer release is available; installation always
 requires explicit approval. Home Assistant may also show a separate, normally

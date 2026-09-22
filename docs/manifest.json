@@ -1,6 +1,6 @@
 {
   "name": "SaltWatch",
-  "version": "2.3.2",
+  "version": "2.3.3",
   "home_assistant_domain": "esphome",
   "new_install_prompt_erase": true,
   "builds": [
@@ -8,15 +8,15 @@
       "chipFamily": "ESP32",
       "parts": [
         {
-          "path": "saltwatch-2.3.2.factory.bin",
+          "path": "saltwatch-2.3.3.factory.bin",
           "offset": 0
         }
       ],
       "ota": {
-        "md5": "55dd9dad62319149c35c8f75f6dece6b",
-        "path": "saltwatch-2.3.2.ota.bin",
-        "release_url": "https://github.com/thomasgregg/saltwatch/releases/tag/v2.3.2",
-        "summary": "Fixes percent-label alignment beside the brightness slider in the offline device web interface."
+        "md5": "c7146e2af92c3d45e6f3bf61bfb1af1c",
+        "path": "saltwatch-2.3.3.ota.bin",
+        "release_url": "https://github.com/thomasgregg/saltwatch/releases/tag/v2.3.3",
+        "summary": "Shows the installed firmware version in Device Maintenance and Home Assistant diagnostics."
       }
     }
   ]

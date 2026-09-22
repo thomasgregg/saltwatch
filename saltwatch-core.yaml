@@ -1,5 +1,5 @@
 substitutions:
-  project_version: "2.3.2"
+  project_version: "2.3.3"
   sensor_min_cm: "5.0"
   sensor_max_cm: "120.0"
   minimum_calibration_span_cm: "10.0"
@@ -28,6 +28,9 @@ esphome:
             ESP_LOGI("saltwatch", "SaltWatch firmware ${project_version} starting");
     - priority: -100
       then:
+        - text_sensor.template.publish:
+            id: firmware_version
+            state: "${project_version}"
         - delay: 3s
         - lambda: |-
             if (id(tof_distance).is_failed()) {
@@ -1701,6 +1704,16 @@ binary_sensor:
       sorting_weight: 40
 
 text_sensor:
+  - platform: template
+    name: "Firmware Version"
+    id: firmware_version
+    icon: mdi:chip
+    entity_category: diagnostic
+    web_server:
+      sorting_group_id: sorting_group_maintenance
+      sorting_weight: 5
+    update_interval: never
+
   - platform: template
     name: "Salt Status"
     id: salt_status

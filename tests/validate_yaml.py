@@ -378,6 +378,7 @@ def run() -> None:
             "WiFi Signal",
         },
         "sorting_group_maintenance": {
+            "Firmware Version",
             "SaltWatch Firmware Update",
         },
     }
@@ -398,6 +399,7 @@ def run() -> None:
                 actual_web_groups[group_id].add(entity["name"])
     assert actual_web_groups == expected_web_groups
     expected_icons = {
+        "Firmware Version": "mdi:chip",
         "SaltWatch Firmware Update": "mdi:update",
         "Full Distance": "mdi:arrow-up",
         "Empty Distance": "mdi:arrow-down",

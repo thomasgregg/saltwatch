@@ -4,6 +4,12 @@ All notable changes to SaltWatch are documented here.
 
 ## Unreleased
 
+## 2.3.3 - 2026-09-22
+
+- Added **Firmware Version** above the update control in **Device Maintenance**
+  and as a Home Assistant diagnostic sensor. It shows the installed SaltWatch
+  version automatically from the firmware at startup.
+
 ## 2.3.2 - 2026-09-22
 
 - Fixed the percent label sitting above the Low Salt LED Brightness slider in
