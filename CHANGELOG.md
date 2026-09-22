@@ -4,6 +4,11 @@ All notable changes to SaltWatch are documented here.
 
 ## Unreleased
 
+## 2.3.4 - 2026-09-22
+
+- Moved manual OTA file uploads into a collapsed **Manual update** row under
+  **Device Maintenance**, below the installed version and release updater.
+
 ## 2.3.3 - 2026-09-22
 
 - Added **Firmware Version** above the update control in **Device Maintenance**

@@ -277,6 +277,10 @@ compiles the adopted configuration instead of installing the published
 SaltWatch build. Use **SaltWatch Firmware Update** for standard releases and the
 Device Builder path only for customized firmware or recovery.
 
+For a firmware file already downloaded to your computer, expand **Manual
+update** in **Device Maintenance**. Select the OTA `.bin` file and choose
+**Upload firmware**.
+
 <p align="center">
   <img src="docs/images/saltwatch-web-interface.png" alt="SaltWatch local web interface showing the Status, Calibration, Forecast and Refill, Device Maintenance, and Diagnostics sections" width="684">
 </p>

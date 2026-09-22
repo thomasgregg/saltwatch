@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bundle ESPHome's offline frontend with SaltWatch's unit-alignment fix."""
+"""Bundle ESPHome's offline frontend with SaltWatch's layout adjustments."""
 
 import gzip
 from importlib.metadata import version
@@ -7,6 +7,11 @@ from pathlib import Path
 import re
 
 import esphome
+
+
+def replace_once(script, old, new):
+    assert script.count(old) == 1, "Upstream frontend changed; review the patch"
+    return script.replace(old, new)
 
 
 def main():
@@ -20,7 +25,42 @@ def main():
     assert script.count(marker) == 1, "Upstream layout changed; review the patch"
     css = (web / "layout.css").read_text()
     assert "`" not in css and "${" not in css
-    script = script.replace(marker, marker + "\n" + css)
+    script = replace_once(script, marker, marker + "\n" + css)
+
+    # Keep the native multipart upload form owned by esp-app, but project it
+    # into the maintenance group through a named slot. Lit retains the form,
+    # selected file, and disclosure state when sensor readings rerender.
+    script = replace_once(
+        script,
+        '<esp-entity-table .scheme="${this.scheme}"></esp-entity-table>${this.renderOta()}',
+        '<esp-entity-table .scheme="${this.scheme}">${this.renderOta()}</esp-entity-table>',
+    )
+    script = replace_once(
+        script,
+        '</div>`)}</div>`)} ${this.renderShowAll()}',
+        '</div>`)}${e===`Device Maintenance`?D`<slot name="saltwatch-maintenance"></slot>`:k}'
+        '</div>`)} ${this.renderShowAll()}',
+    )
+    script = replace_once(
+        script,
+        'D`<div class="tab-header">OTA Update</div><form method="POST" '
+        'action="${hr()}/update" enctype="multipart/form-data" class="tab-container">'
+        '<input class="btn" type="file" name="update" accept="application/octet-stream"> '
+        '<input class="btn" type="submit" value="Update"></form>`',
+        'D`<details slot="saltwatch-maintenance" class="manual-update">'
+        '<summary><span>Manual update</span></summary>'
+        '<form method="POST" action="${hr()}/update" enctype="multipart/form-data">'
+        '<label for="manual-firmware-file">Upload an OTA .bin file from your computer.</label>'
+        '<div class="manual-update-controls">'
+        '<input id="manual-firmware-file" class="btn" type="file" name="update" '
+        'accept=".bin,application/octet-stream" required> '
+        '<input class="btn" type="submit" value="Upload firmware">'
+        '</div></form></details>`',
+    )
+    maintenance_css = (web / "maintenance.css").read_text()
+    assert "`" not in maintenance_css and "${" not in maintenance_css
+    script = replace_once(script, 'form .btn{margin-right:0}',
+                          'form .btn{margin-right:0}\n' + maintenance_css)
     target = web / "saltwatch-web.js"
     target.parent.mkdir(exist_ok=True)
     target.write_text("// ESPHome 2026.9.0 offline web UI; see README.md and LICENSE.\n" + script + "\n")

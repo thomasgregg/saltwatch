@@ -52,7 +52,7 @@ web interface intentionally do not have credentials.
 
 ## ESPHome version
 
-SaltWatch 2.3.3 is validated with:
+SaltWatch 2.3.4 is validated with:
 
 - ESPHome 2026.9.0
 - ESP-IDF 5.5.5
@@ -127,22 +127,22 @@ The published browser and OTA images are scanned for validation credentials,
 checked for the ESP32 image header, and hashed before and after GitHub Pages
 deployment. The manifest's OTA MD5 must match the published OTA image.
 
-## Current v2.3.3 build results
+## Current v2.3.4 build results
 
 | Build | RAM | Application flash | Result |
 | --- | ---: | ---: | --- |
 | Production | 29.4% | 56.9% | Passed |
 | Browser installer | 29.5% | 57.5% | Passed |
 
-The v2.3.3 hosted images are generated and verified as part of the release
+The v2.3.4 hosted images are generated and verified as part of the release
 process. Their final sizes and SHA-256 hashes are recorded below:
 
 ```text
-Factory size: 1,120,224 bytes
-Factory SHA-256: abd50139ec9190a20cfb9624474c970a52d4c23bae7ad65d0aa4bfe036708e9b
-OTA size: 1,054,688 bytes
-OTA MD5: c7146e2af92c3d45e6f3bf61bfb1af1c
-OTA SHA-256: 2ac8a1a0580f40e97e4661cb21eb6c0a30e67c78809442a31ff2bb4958fdb5f3
+Factory size: 1,120,656 bytes
+Factory SHA-256: 62c6813c59635a5527b69ade96ca3880a04f6e90d466a37f72af06259314716d
+OTA size: 1,055,120 bytes
+OTA MD5: 52f836add2e2fd4a2a95927dbf0d1c72
+OTA SHA-256: efad106827c5dd249b06e8de78a8a369f82cc42ee4001a358b698af778a58745
 ```
 
 ## Configuration audit expectations

@@ -1,6 +1,6 @@
 {
   "name": "SaltWatch",
-  "version": "2.3.3",
+  "version": "2.3.4",
   "home_assistant_domain": "esphome",
   "new_install_prompt_erase": true,
   "builds": [
@@ -8,15 +8,15 @@
       "chipFamily": "ESP32",
       "parts": [
         {
-          "path": "saltwatch-2.3.3.factory.bin",
+          "path": "saltwatch-2.3.4.factory.bin",
           "offset": 0
         }
       ],
       "ota": {
-        "md5": "c7146e2af92c3d45e6f3bf61bfb1af1c",
-        "path": "saltwatch-2.3.3.ota.bin",
-        "release_url": "https://github.com/thomasgregg/saltwatch/releases/tag/v2.3.3",
-        "summary": "Shows the installed firmware version in Device Maintenance and Home Assistant diagnostics."
+        "md5": "52f836add2e2fd4a2a95927dbf0d1c72",
+        "path": "saltwatch-2.3.4.ota.bin",
+        "release_url": "https://github.com/thomasgregg/saltwatch/releases/tag/v2.3.4",
+        "summary": "Groups manual firmware uploads under Device Maintenance in an expandable Manual update row."
       }
     }
   ]
