@@ -120,6 +120,13 @@ Do not rely on low-salt alerts until this checklist passes.
 - Enable it while salt is sufficient; the switch stays on but the LED stays off.
 - With a valid low reading, confirm the built-in LED blinks dim red for about
   250 ms every two seconds. Repeat using a non-default threshold.
+- Confirm **Low Salt LED Brightness** appears beside the alert switch in the
+  web interface and in Home Assistant's device configuration settings, with
+  a default of 30%. Adjust it from both interfaces to 1%, 30%, and 100%; verify
+  the other interface reflects the change and the flashes change brightness
+  without changing their rhythm. Adjust during both lit and dark phases.
+- Change brightness while the alert is disabled or salt is sufficient; confirm
+  the LED stays off and uses the new brightness when a warning next starts.
 - Confirm blinking follows the Low Salt entity at the exact threshold and
   clears only above the threshold plus five points.
 - Disable it while blinking; confirm it stops immediately while Low Salt
@@ -127,9 +134,10 @@ Do not rely on low-salt alerts until this checklist passes.
 - During blinking, disconnect/block the sensor or invalidate calibration;
   confirm the LED stops when Low Salt clears and resumes after valid low
   measurements recover.
-- Restart while enabled; confirm the preference survives and the LED only
-  starts blinking after a fresh valid low measurement. Repeat after an OTA
-  update and confirm calibration and forecast history survive too.
+- Restart while enabled with a non-default brightness; confirm both settings
+  survive and the LED only starts blinking after a fresh valid low measurement.
+  Repeat after an OTA update and confirm calibration and forecast history
+  survive too.
 - Disconnect Wi-Fi and Home Assistant; verify the warning still follows salt
   level, including recovery after refill.
 

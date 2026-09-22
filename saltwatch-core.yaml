@@ -1,5 +1,5 @@
 substitutions:
-  project_version: "2.3.0"
+  project_version: "2.3.1"
   sensor_min_cm: "5.0"
   sensor_max_cm: "120.0"
   minimum_calibration_span_cm: "10.0"
@@ -127,7 +127,7 @@ i2c:
   scan: true
 
 # The ATOM Lite C008's onboard RGB LED is independent of the Grove sensor.
-# Only the alert preference is public/persistent; never restore an old warning.
+# Only alert settings are public/persistent; never restore an old warning.
 light:
   - platform: esp32_rmt_led_strip
     id: low_salt_led
@@ -139,17 +139,32 @@ light:
     restore_mode: ALWAYS_OFF
     default_transition_length: 0s
     effects:
-      - strobe:
+      - lambda:
           name: "Low Salt Blink"
-          colors:
-            - state: true
-              brightness: 30%
-              red: 100%
-              green: 0%
-              blue: 0%
-              duration: 250ms
-            - state: false
-              duration: 1750ms
+          update_interval: 50ms
+          lambda: |-
+            static uint64_t started_ms = 0;
+            static float last_brightness = -1.0f;
+            const uint64_t now_ms = esp_timer_get_time() / 1000ULL;
+            if (initial_run) {
+              started_ms = now_ms;
+              last_brightness = -1.0f;
+            }
+            const bool lit = (now_ms - started_ms) % 2000ULL < 250ULL;
+            const float brightness = lit ? id(low_salt_led_brightness).state / 100.0f : 0.0f;
+            if (brightness == last_brightness) {
+              return;
+            }
+            auto call = id(low_salt_led).make_call();
+            // Keep the logical light on during dark phases so the effect runs.
+            call.set_state(true);
+            call.set_rgb(1.0f, 0.0f, 0.0f);
+            call.set_brightness(brightness);
+            call.set_transition_length(0);
+            call.set_publish(false);
+            call.set_save(false);
+            call.perform();
+            last_brightness = brightness;
 
 switch:
   - platform: template
@@ -397,7 +412,7 @@ script:
       - lambda: |-
           const bool should_blink = id(low_salt_led_alert).state &&
               id(low_salt).has_state() && id(low_salt).state;
-          // Strobe keeps the logical light on even during its dark phase.
+          // The effect keeps the logical light on even during its dark phase.
           // Repeated evaluations must not restart it or create flash writes.
           if (should_blink == id(low_salt_led).remote_values.is_on()) {
             return;
@@ -407,7 +422,7 @@ script:
           call.set_save(false);
           if (should_blink) {
             call.set_rgb(1.0f, 0.0f, 0.0f);
-            call.set_brightness(0.30f);
+            call.set_brightness(id(low_salt_led_brightness).state / 100.0f);
             call.set_effect("Low Salt Blink");
           }
           // A normal off command stops the effect automatically. Explicitly
@@ -1427,6 +1442,23 @@ number:
       - lambda: |-
           id(low_salt_threshold).publish_state(x);
       - script.execute: evaluate_state
+
+  - platform: template
+    name: "Low Salt LED Brightness"
+    id: low_salt_led_brightness
+    icon: mdi:brightness-6
+    entity_category: config
+    web_server:
+      sorting_group_id: sorting_group_low_salt_alert
+      sorting_weight: 30
+    unit_of_measurement: "%"
+    mode: slider
+    min_value: 1
+    max_value: 100
+    step: 1
+    initial_value: 30
+    restore_value: true
+    optimistic: true
 
 button:
   - platform: template

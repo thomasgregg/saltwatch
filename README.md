@@ -158,6 +158,7 @@ rules, manual calibration, and low-salt behavior.
 | **Empty Distance** | Persistent empty-level calibration value. |
 | **Low Salt Threshold** | Persistent warning threshold; default 20%. |
 | **Low Salt LED Alert** | Optional onboard LED warning, following Low Salt and its configured threshold; off by default. |
+| **Low Salt LED Brightness** | Brightness of the onboard warning LED, adjustable from 1–100%; defaults to 30% and is remembered. |
 | **Set Current Distance as Full** | Captures the current filtered distance as full. |
 | **Set Current Distance as Empty** | Captures the current filtered distance as empty. |
 | **Record Salt Refill** | Starts a new forecast cycle after a small or unusual refill that was not detected automatically. |
@@ -229,8 +230,11 @@ For a local visual warning, enable **Low Salt LED Alert** under **Low Salt
 Alert** in the device's web interface, or in the SaltWatch device's
 configuration entities in Home Assistant. The ATOM Lite's built-in LED blinks
 red while **Low Salt** is active, using your **Low Salt Threshold** and its
-existing hysteresis. The setting is remembered, works without Home Assistant
-or Wi-Fi, and is off by default. An unlit LED does not confirm sensor health;
+existing hysteresis. Adjust **Low Salt LED Brightness** in the same web section
+or in Home Assistant's device configuration settings, from 1–100% (default
+30%). Brightness changes apply while blinking without changing its rhythm.
+Both settings are remembered and work without Home Assistant or Wi-Fi; the
+alert is off by default. An unlit LED does not confirm sensor health;
 faults and invalid calibration suppress this low-salt warning.
 
 The optional Home Assistant blueprint follows Salt Status priority so fault,
@@ -260,7 +264,7 @@ After Wi-Fi provisioning, open the MAC-suffixed address shown by ESPHome, such
 as `http://saltwatch-a1b2c3.local/`, or use the device IP. The local interface
 organizes the device into Status, Calibration, Low Salt Alert, Forecast and
 Refill, Device Maintenance, and Diagnostics sections. Low Salt Alert groups
-the existing threshold with the optional onboard LED setting. The
+the existing threshold with the optional onboard LED switch and brightness. The
 **SaltWatch Firmware Update**
 entity checks the official SaltWatch release manifest every six hours and
 offers an update only when a newer release is available; installation always

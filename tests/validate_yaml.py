@@ -165,19 +165,22 @@ def run() -> None:
     assert "name" not in led
     assert led["restore_mode"] == "ALWAYS_OFF"
     assert led["default_transition_length"] == "0s"
-    blink = led["effects"][0]["strobe"]
+    blink = led["effects"][0]["lambda"]
     assert blink["name"] == "Low Salt Blink"
-    assert blink["colors"] == [
-        {
-            "state": True,
-            "brightness": "30%",
-            "red": "100%",
-            "green": "0%",
-            "blue": "0%",
-            "duration": "250ms",
-        },
-        {"state": False, "duration": "1750ms"},
-    ]
+    assert blink["update_interval"] == "50ms"
+    brightness = next(n for n in core["number"] if n["id"] == "low_salt_led_brightness")
+    assert brightness["name"] == "Low Salt LED Brightness"
+    assert brightness["entity_category"] == "config"
+    assert brightness["unit_of_measurement"] == "%"
+    assert brightness["mode"] == "slider"
+    assert brightness["min_value"] == 1
+    assert brightness["max_value"] == 100
+    assert brightness["step"] == 1
+    assert brightness["initial_value"] == 30
+    assert brightness["restore_value"] is True
+    assert brightness["optimistic"] is True
+    assert not brightness.get("internal", False)
+    assert not brightness.get("disabled_by_default", False)
     led_switch = core["switch"][0]
     assert led_switch["name"] == "Low Salt LED Alert"
     assert led_switch["entity_category"] == "config"
@@ -333,6 +336,9 @@ def run() -> None:
     assert threshold["web_server"]["sorting_weight"] < (
         led_switch["web_server"]["sorting_weight"]
     )
+    assert led_switch["web_server"]["sorting_weight"] < (
+        brightness["web_server"]["sorting_weight"]
+    )
     expected_web_groups = {
         "sorting_group_status": {
             "Salt Status",
@@ -352,6 +358,7 @@ def run() -> None:
         "sorting_group_low_salt_alert": {
             "Low Salt Threshold",
             "Low Salt LED Alert",
+            "Low Salt LED Brightness",
         },
         "sorting_group_forecast": {
             "Estimated Days Until Low Salt",
@@ -391,6 +398,7 @@ def run() -> None:
         "Empty Distance": "mdi:arrow-down",
         "Low Salt Threshold": "mdi:gauge",
         "Low Salt LED Alert": "mdi:led-on",
+        "Low Salt LED Brightness": "mdi:brightness-6",
         "Set Current Distance as Full": "mdi:target",
         "Set Current Distance as Empty": "mdi:target",
         "Record Salt Refill": "mdi:refresh",

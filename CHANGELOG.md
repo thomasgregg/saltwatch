@@ -4,6 +4,13 @@ All notable changes to SaltWatch are documented here.
 
 ## Unreleased
 
+## 2.3.1 - 2026-09-22
+
+- Added **Low Salt LED Brightness** in the device web interface's **Low Salt
+  Alert** section and Home Assistant's configuration entities. It adjusts the
+  warning LED from 1–100%, defaults to the previous 30%, survives restarts, and
+  takes effect during blinking without resetting the two-second cycle.
+
 ## 2.3.0 - 2026-09-21
 
 - Added an optional **Low Salt LED Alert** configuration switch for the ATOM

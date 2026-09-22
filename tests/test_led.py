@@ -26,7 +26,8 @@ def run() -> None:
 
     evaluate = firmware_lambda("evaluate_state")
     update = firmware_lambda("update_low_salt_led")
-    used_ids = set(re.findall(r"id\((\w+)\)", evaluate + update))
+    blink = core["light"][0]["effects"][0]["lambda"]["lambda"]
+    used_ids = set(re.findall(r"id\((\w+)\)", evaluate + update + blink))
     declarations = []
     for item in core["globals"]:
         if item["id"] in used_ids:
@@ -66,6 +67,7 @@ struct Light {
     bool is_on() const { return on; }
   } remote_values;
   std::string effect = "None";
+  float output_brightness = 0;
   int calls = 0;
   struct Call {
     Light &light;
@@ -78,20 +80,24 @@ struct Light {
     void set_rgb(float r, float g, float b) { red = r; green = g; blue = b; }
     void set_brightness(float x) { brightness = x; }
     void set_effect(const char *x) { effect = x; }
+    void set_transition_length(int x) { assert(x == 0); }
     void perform() {
-      assert(!save && publish);
+      assert(!save);
       if (state) {
-        assert(effect == "Low Salt Blink");
+        assert(publish ? effect == "Low Salt Blink" : effect.empty());
         assert(red == 1 && green == 0 && blue == 0);
-        assert(brightness > 0 && brightness <= 0.5f);
+        assert(brightness >= 0 && brightness <= 1.0f);
+        light.output_brightness = brightness;
       } else {
+        assert(publish);
         // ESPHome stops the effect on a normal off command; requesting an
         // explicit effect simultaneously is rejected by LightCall.
         assert(effect.empty());
         effect = "None";
+        light.output_brightness = 0;
       }
-      light.remote_values.on = state;
-      light.effect = effect;
+      if (publish) light.remote_values.on = state;
+      if (!effect.empty()) light.effect = effect;
       ++light.calls;
     }
   };
@@ -100,11 +106,16 @@ struct Light {
 struct Device {
   // DECLARATIONS
   Light low_salt_led;
+  Device() { low_salt_led_brightness.publish_state(30); }
   void evaluate() {
     // EVALUATE
   }
   void update() {
     // UPDATE
+  }
+  void blink(bool initial_run = false) {
+    assert(blinking());
+    // BLINK
   }
   void run() { evaluate(); update(); }
   void enable(bool enabled) { low_salt_led_alert.publish_state(enabled); update(); }
@@ -196,10 +207,65 @@ int main() {
   now_ms = 60ULL * 24 * 60 * 60 * 1000; // Long offline uptime.
   restarted.sample(30);
   assert(restarted.blinking() && !restarted.sensor_fault.state);
+
+  // Execute the real effect, including brightness changes in both phases.
+  for (uint64_t start : {0ULL, 4294967200ULL, 5184000000ULL}) {
+    now_ms = start;
+    Device led;
+    led.calibrate();
+    led.low_salt_threshold.publish_state(20);
+    led.low_salt_led_brightness.publish_state(80); // Restored preference.
+    led.enable(true);
+    assert(!led.blinking());
+    led.sample(10);
+    led.blink(true);
+    assert(led.low_salt_led.output_brightness == 0.8f);
+    now_ms = start + 100;
+    led.low_salt_led_brightness.publish_state(100);
+    led.blink();
+    assert(led.low_salt_led.output_brightness == 1.0f);
+    int calls = led.low_salt_led.calls;
+    led.run();
+    led.blink();
+    assert(led.low_salt_led.calls == calls);
+    now_ms = start + 249;
+    led.blink();
+    assert(led.low_salt_led.output_brightness == 1.0f);
+    now_ms = start + 250;
+    led.blink();
+    assert(led.blinking() && led.low_salt_led.output_brightness == 0);
+    led.low_salt_led_brightness.publish_state(1);
+    led.run();
+    led.blink();
+    assert(led.low_salt_led.output_brightness == 0);
+    now_ms = start + 1999;
+    led.blink();
+    assert(led.low_salt_led.output_brightness == 0);
+    now_ms = start + 2000;
+    led.blink();
+    assert(led.low_salt_led.output_brightness == 0.01f);
+    assert(!led.forecast_reset_requested && led.low_salt.state);
+    led.enable(false);
+    led.low_salt_led_brightness.publish_state(60);
+    led.run();
+    assert(!led.blinking() && led.low_salt_led.output_brightness == 0);
+    now_ms = start + 3100;
+    led.enable(true);
+    led.blink(true); // Restart begins with a full lit phase at the new value.
+    assert(led.low_salt_led.output_brightness == 0.6f);
+    now_ms += 250;
+    led.blink();
+    assert(led.low_salt_led.output_brightness == 0);
+    led.sample(50);
+    led.low_salt_led_brightness.publish_state(100);
+    led.run();
+    assert(!led.blinking() && led.low_salt_led.output_brightness == 0);
+  }
 }
 '''
     source = source.replace("// DECLARATIONS", "\n".join(declarations))
     source = source.replace("// EVALUATE", evaluate).replace("// UPDATE", update)
+    source = source.replace("// BLINK", blink)
     compiler = shutil.which("c++")
     assert compiler, "A C++ compiler is required for the firmware LED checks"
     with tempfile.TemporaryDirectory(prefix="saltwatch-led-test-") as temp:
