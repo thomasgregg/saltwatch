@@ -15,8 +15,8 @@ available for adoption in ESPHome Device Builder.
   computer
 - desktop Chrome or Microsoft Edge
 - 2.4 GHz Wi-Fi credentials
-- ESPHome Device Builder in Home Assistant for encrypted API adoption and later
-  managed updates
+- Home Assistant with the ESPHome integration; ESPHome Device Builder is used
+  for adoption and custom builds, not for installing standard release updates
 
 ### Install SaltWatch
 
@@ -46,8 +46,9 @@ interface is available immediately at that address without a login.
 
 ## Adopt in ESPHome Device Builder
 
-Adoption turns the public bootstrap into a configuration owned by your Home
-Assistant installation and adds an encrypted native API key.
+Adding SaltWatch to Home Assistant provisions its API encryption key. Adoption
+in Device Builder gives you an editable configuration for custom builds; it is
+optional when you use the official firmware and its managed updater.
 
 1. When the browser installer reports that the device is connected, select
    **Add to Home Assistant**. This provisions and stores the unique encrypted
@@ -59,6 +60,11 @@ Assistant installation and adds an encrypted native API key.
 
 If SaltWatch was added directly under **Settings → Devices & services**, that is
 equivalent to the first step. Enter the generated API key if prompted.
+
+Complete initial Wi-Fi and Home Assistant setup within ten minutes of boot.
+The public installer build closes its provisioning window after that interval
+if setup is incomplete. If the window expires, power-cycle the device and retry;
+its saved settings are retained.
 
 The web UI and all OTA components are part of the shared SaltWatch package, so
 adoption does not require extra OTA/web secrets or copied YAML blocks.
@@ -73,16 +79,19 @@ SaltWatch checks its official GitHub Pages release manifest every six hours. A
 **SaltWatch Firmware Update** entity appears in Home Assistant and under
 **Device Maintenance** in the local interface. When a newer version is
 available, review the release information and explicitly approve the
-installation. SaltWatch does not install updates automatically.
+installation. **Firmware Version** in Device Maintenance shows the currently
+installed release and is also a Home Assistant diagnostic sensor. SaltWatch does
+not install updates automatically.
 
 The managed updater installs the canonical SaltWatch firmware and preserves
-Wi-Fi credentials, API encryption, calibration, and forecast data. If you have
-added custom YAML overrides, continue using Device Builder so those changes are
-included in the compiled firmware.
+Wi-Fi credentials, API encryption, calibration, forecast data, low-salt
+threshold, and LED alert settings. If you have added custom YAML overrides,
+continue using Device Builder so those changes are included in the compiled
+firmware.
 
-The first release containing managed updates must still be installed through
-Device Builder or a manual OTA upload. Later releases will be detected by the
-**SaltWatch Firmware Update** entity.
+Devices running releases older than 2.2.2 do not have the managed updater.
+Install a current release through Device Builder or a manual OTA upload first.
+Later releases will then be detected by **SaltWatch Firmware Update**.
 
 ### Why Home Assistant can show two firmware entries
 
@@ -117,8 +126,10 @@ API is separate and remains protected after adoption.
 
 ## Updates through the local web interface
 
-1. In Device Builder, select **Install → Manual download** and obtain the OTA
-   image, normally `firmware.bin` or `firmware.ota.bin`.
+1. Download `saltwatch-<version>.ota.bin` from the
+   [SaltWatch releases](https://github.com/thomasgregg/saltwatch/releases/latest).
+   For a custom build, use **Install → Manual download** in Device Builder and
+   select the OTA image, normally `firmware.bin` or `firmware.ota.bin`.
 2. Open the MAC-suffixed address shown by ESPHome, such as
    `http://saltwatch-a1b2c3.local/`, or use the device IP.
 3. Use the file picker in **Firmware Upload**, directly below **Device Maintenance**.
@@ -133,8 +144,10 @@ image is a merged USB-flashing image; the web updater requires an OTA image.
 Use this path only if you do not want the hosted installer.
 
 1. Download or clone the repository.
-2. Copy `saltwatch.yaml` and `saltwatch-core.yaml` into the same Device Builder
-   configuration directory.
+2. Copy `saltwatch.yaml`, `saltwatch-core.yaml`, and the `web/` directory into
+   the Device Builder configuration directory, preserving their relative paths.
+   The build requires `web/saltwatch-web.js`; the two YAML files alone are not
+   sufficient.
 3. Copy `secrets.yaml.example` to `secrets.yaml` and set:
 
    ```yaml

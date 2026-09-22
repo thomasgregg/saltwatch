@@ -10,14 +10,16 @@ below **Device Maintenance**, using the original file picker and **Update**
 button without a disclosure or helper sentence.
 `maintenance.css` keeps the file picker within narrow screens. A named slot
 keeps the form owned by the original component, preserving its selected file
-when live readings refresh. Uploads still use ESPHome's native multipart POST endpoint,
-including when the interface is served under a URL prefix. The section is shown
+when live readings refresh. Uploads still use ESPHome's native multipart POST
+endpoint, including when the interface is served under a URL prefix. The section is shown
 only when web OTA is enabled.
 
 The firmware embeds this script through `web_server.js_include` and serves it
-locally at `/0.js`. The external script URL is disabled, so viewing the device
-interface does not require internet access. ESPHome's `local` option is false
-because its stock all-in-one page bypasses custom script includes.
+locally at `/0.js`. The external script URL is disabled, so the interface's
+controls work without internet access. ESPHome's Iconify component still fetches
+uncached entity icons from external Iconify services; those icons may be absent
+offline. ESPHome's `local` option is false because its stock all-in-one page
+bypasses custom script includes.
 
 Regenerate using the validated ESPHome environment:
 

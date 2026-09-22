@@ -99,13 +99,17 @@ only above 25%.
 After calibration, open **Low Salt Alert** in the local web interface. Set
 **Low Salt Threshold** and enable **Low Salt LED Alert** if you want the ATOM
 Lite's built-in LED to warn you locally. Home Assistant exposes the same
-switch in the device's configuration entities.
+switch and **Low Salt LED Brightness** setting in the device's configuration
+entities. Brightness is adjustable from 1–100%, defaults to 30%, and is remembered
+across normal restarts and firmware updates.
 
 - The switch is off by default and remembers your choice across normal
   restarts and firmware updates.
 - On means the warning is enabled, not that the LED is currently illuminated.
-- While Low Salt is active, the LED gives a dim red blink for 250 ms every two
-  seconds. It follows the existing threshold and five-point hysteresis.
+- While Low Salt is active, the LED blinks red at the selected brightness for
+  250 ms every two seconds. Brightness changes take effect during blinking
+  without restarting the cycle. The warning follows the existing threshold
+  and five-point hysteresis.
 - Changing the threshold or enabling/disabling the switch takes effect
   immediately using the current evaluated Low Salt state.
 - Turning the switch off stops the blinking without disabling Low Salt,

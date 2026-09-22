@@ -110,8 +110,9 @@ reuse the Wi-Fi and API encryption values provisioned on the device.
 ## Release validation
 
 The GitHub Actions workflow creates temporary dummy secrets, validates both
-entry points, and compiles both complete ESP-IDF firmware variants on a clean
-runner. The workflow never uses production credentials.
+entry points, compiles both complete ESP-IDF firmware variants, and validates
+and compiles the host emulator on a clean runner. The workflow never uses
+production credentials.
 
 Additional release checks include:
 

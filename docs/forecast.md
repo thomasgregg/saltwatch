@@ -13,6 +13,8 @@ restart to perform.
   warning threshold, or unavailable when a responsible estimate cannot be made.
 - **Forecast Status** — explains whether the forecast is learning, available,
   confirming a refill, or blocked by measurement/calibration.
+- **Forecast Details** — gives learning progress or explains why an estimate
+  is unavailable.
 - **Record Salt Refill** — tells the predictor about a small or unusual refill
   that automatic detection may not recognize.
 - **Last Recorded Refill** — remembers the latest automatically confirmed or

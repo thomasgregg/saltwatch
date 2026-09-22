@@ -59,10 +59,10 @@ generic recovery message.
 7. If the reminder is enabled, choose how long Low Salt must remain active.
 8. Save the automation.
 
-No YAML editing, Home Assistant package, or restart is required. SaltWatch 2.2.0
-uses a new blueprint input model and does not retain the obsolete individual
-problem-entity inputs. Automations created from an earlier SaltWatch alerts
-blueprint must be recreated with the four current SaltWatch entities.
+No YAML editing, Home Assistant package, or restart is required. If you still
+use an alerts blueprint from before SaltWatch 2.2.0, recreate its automation
+with the four current entity inputs. The old individual problem-entity inputs
+are no longer supported.
 
 The advance warning is sent after the confirmation time when **Estimated Days
 Until Low Salt** first becomes available inside the chosen window or crosses
@@ -89,14 +89,21 @@ automations from **Settings → Automations & scenes → Blueprints**.
 
 ## Test safely
 
-After saving, use Home Assistant's **Run actions** command to confirm the chosen
-notification target works. This tests delivery only; it does not simulate each
-trigger. The SaltWatch emulator can exercise every Salt Status and forecast
-combination without physical hardware.
+First test the selected notification entity with **notify.send_message** in
+Home Assistant's **Actions** tool. Then test the automation through real state
+transitions. **Run actions** does not supply a trigger ID, so it does not select
+this blueprint's trigger-specific notification branches. See Home Assistant's
+[automation testing guide](https://www.home-assistant.io/docs/automation/troubleshooting/#running-the-entire-automation).
+
+The SaltWatch emulator can simulate salt status, salt level, and forecast values
+for card testing. It does not expose **Calibration Details**, a required input
+of this blueprint, so it cannot provide a complete notification test device
+without extending the emulator.
 
 Keep the default two-minute confirmation time or increase it if brief
 maintenance states should not notify you. For quick emulator testing, shorten
-both the confirmation time and low-salt reminder delay temporarily.
+both the confirmation time and low-salt reminder delay temporarily after adding
+the missing Calibration Details entity.
 
 The blueprint uses Home Assistant's standard `notify.send_message` action.
 Choose any phone, browser, speaker, or notification service that Home Assistant

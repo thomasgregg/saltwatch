@@ -104,11 +104,14 @@ Do not rely on low-salt alerts until this checklist passes.
 21. Open the local web interface without credentials and confirm the SaltWatch
     entities are visible.
 22. Confirm the device is reachable only from the intended trusted network.
-23. Confirm **SaltWatch Firmware Update** reports the installed SaltWatch
-    version and does not offer the same release as an update. Do not confuse it
-    with Home Assistant's normally disabled **Firmware** entry for Device
-    Builder compilation.
-24. Test one web update using `firmware.bin` or `firmware.ota.bin`.
+23. Confirm **Firmware Version** under **Device Maintenance** matches the
+    installed release. Confirm **SaltWatch Firmware Update** does not offer the
+    same release again. Home Assistant's normally disabled **Firmware** entry
+    is the separate Device Builder update path.
+24. Test one manual OTA update through **Firmware Upload**, directly below
+    **Device Maintenance**, using `saltwatch-<version>.ota.bin` or a custom OTA
+    image. Confirm the file picker and **Update** button fit at desktop and
+    mobile widths.
 25. On the next release, review and approve one managed update and confirm Wi-Fi,
     API encryption, calibration, and forecast state survive the reboot.
 26. Observe the installed system for several days before relying on alerts.
@@ -118,8 +121,9 @@ Do not rely on low-salt alerts until this checklist passes.
 - Confirm **Low Salt LED Alert** is off on a new installation and is visible
   beside **Low Salt Threshold** in the web interface's **Low Salt Alert** section.
 - Enable it while salt is sufficient; the switch stays on but the LED stays off.
-- With a valid low reading, confirm the built-in LED blinks dim red for about
-  250 ms every two seconds. Repeat using a non-default threshold.
+- With a valid low reading, confirm the built-in LED blinks red at the selected
+  brightness for about 250 ms every two seconds. Repeat using a non-default
+  threshold.
 - Confirm **Low Salt LED Brightness** appears beside the alert switch in the
   web interface and in Home Assistant's device configuration settings, with
   a default of 30%. Adjust it from both interfaces to 1%, 30%, and 100%; verify
@@ -143,8 +147,9 @@ Do not rely on low-salt alerts until this checklist passes.
 
 ### Forecast operation
 
-27. After calibration, confirm **Forecast Status** shows `Learning` rather than
-    a fault state.
+27. After calibration and clock synchronization, with salt above the threshold
+    and no learned history, confirm **Forecast Status** shows `Learning`. At or
+    below the threshold, expect `Low Salt` and an estimate of 0 days.
 28. After at least seven trustworthy daily values and meaningful salt decline,
     confirm **Estimated Days Until Low Salt** becomes available.
 29. Compare the estimate with the observed decline; treat it as planning

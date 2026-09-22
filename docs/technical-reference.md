@@ -11,7 +11,7 @@ lambdas and watchdog scripts; it does not use a custom C++ component.
 | Property | Value |
 | --- | --- |
 | Project | SaltWatch |
-| Node name | `saltwatch` |
+| Node name | `saltwatch-<MAC suffix>`; for example, `saltwatch-a1b2c3` |
 | Friendly name | `SaltWatch` |
 | ESPHome project | `saltwatch.salt-monitor` |
 | Release | 2.3.5 |
@@ -27,14 +27,14 @@ registry entries.
 ## Measurement pipeline
 
 1. The VL53L0X polls every 30 seconds in long-range mode.
-2. Each raw value is inspected before filtering.
-3. `NaN`, values below 5 cm, and values above 120 cm are rejected.
+2. Each raw value is converted from metres to centimetres and inspected before
+   entering the median.
+3. Non-finite values, values below 5 cm, and values above 120 cm are rejected.
 4. Rejected readings increment an independent consecutive-invalid counter.
 5. Only valid readings enter a five-value moving median with `send_every: 1`.
 6. A timeout filter is last in the filtered path and publishes `NaN` after 180
    seconds without a valid input.
-7. Public distance is converted from metres to centimetres and exposed with one
-   decimal place.
+7. The filtered distance is exposed in centimetres with one decimal place.
 
 Keeping the timeout last ensures its generated `NaN` cannot be swallowed by a
 later filter. An independent startup watchdog covers the special case where the
@@ -50,10 +50,12 @@ Sensor Fault activates for any of these conditions:
 
 - no valid measurement within 180 seconds of startup;
 - no new valid measurement for 180 seconds during normal operation;
-- three consecutive invalid raw readings;
-- a raw `NaN` sequence;
-- distance below 5 cm or above 120 cm; or
-- missing/unavailable VL53L0X hardware.
+- three consecutive invalid raw readings after initialization. Invalid means
+  non-finite (including `NaN`), below 5 cm, or above 120 cm.
+
+Missing or stalled hardware reaches a fault through the same startup or
+measurement timeout. A single rejected reading does not immediately raise a
+fault; health is reevaluated every five seconds and on filtered output.
 
 Fault evaluation does not depend solely on the public filtered sensor. Raw
 invalid readings update health state before they are discarded.
@@ -193,6 +195,7 @@ higher-priority problem is active.
 | Forecast Status | Text sensor | Explains forecast availability and learning state. |
 | Forecast Details | Diagnostic text sensor | Gives concise forecast learning progress or the current blocking reason. |
 | Forecast Confidence | Diagnostic text sensor | Low/Medium/High evidence quality; disabled by default. |
+| Firmware Version | Diagnostic text sensor | Installed project version, published at startup; visible in Device Maintenance and Home Assistant. |
 | SaltWatch Firmware Update | Update | Checks the official release manifest every six hours and installs only after explicit approval. Distinct from Home Assistant's disabled-by-default Device Builder **Firmware** entity. |
 | WiFi Signal | Diagnostic sensor | Standard ESPHome Wi-Fi RSSI. |
 | Last Valid Measurement Age | Diagnostic sensor, s | Monotonic age of the most recent accepted raw reading; disabled by default to avoid unnecessary history. |
@@ -208,11 +211,13 @@ higher-priority problem is active.
   an already learned forecast can be calculated after a restart even before
   the clock reconnects.
 - The production native API uses encryption.
-- The local web interface is self-contained and does not load its assets from
-  the internet.
-- The local web interface uses ESPHome web-server version 3 with task-oriented
-  Status, Calibration, Forecast and Refill, Device Maintenance, and Diagnostics
-  groups.
+- The web interface's JavaScript and styles are served by the device. Controls
+  work without internet access; uncached entity icons are fetched by the browser
+  from Iconify and may be absent offline.
+- The local web interface uses ESPHome web-server version 3 with Status,
+  Calibration, Low Salt Alert, Forecast and Refill, Device Maintenance,
+  Firmware Upload, and Diagnostics sections. Firmware Upload uses the native
+  file picker and Update button in its own section below Device Maintenance.
 - The managed updater checks the GitHub Pages manifest over verified HTTPS every
   six hours. It never installs a release automatically.
 - The canonical OTA image preserves provisioned Wi-Fi, API encryption,

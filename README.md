@@ -107,9 +107,9 @@ through an existing hinge or lid gap. See the
 6. Select **Add to Home Assistant** when the installer offers it, or add the
    discovered ESPHome integration under **Settings → Devices & services**. This
    provisions the unique API encryption key on the device.
-7. Open ESPHome Device Builder and select **Adopt** for the discovered
-   SaltWatch device. Keep the generated encrypted API configuration and install
-   it wirelessly.
+7. Optional: to manage a custom configuration, open ESPHome Device Builder and
+   select **Adopt**. Keep the API encryption key and install the adopted
+   configuration wirelessly. Official release updates do not require adoption.
 8. Install the sensor in the lid and complete both calibration steps below.
 
 No command line, local ESPHome installation, OTA password, or web-server
@@ -163,6 +163,8 @@ rules, manual calibration, and low-salt behavior.
 | **Set Current Distance as Full** | Captures the current filtered distance as full. |
 | **Set Current Distance as Empty** | Captures the current filtered distance as empty. |
 | **Record Salt Refill** | Starts a new forecast cycle after a small or unusual refill that was not detected automatically. |
+| **Firmware Version** | Installed SaltWatch release; also shown under Device Maintenance in the web interface. |
+| **SaltWatch Firmware Update** | Checks for official releases every six hours; installs only when requested. |
 | **WiFi Signal** | Standard ESPHome diagnostic signal strength. |
 | **Last Valid Measurement Age** | Diagnostic age of the most recent accepted sensor reading; disabled by default. |
 | **Forecast Confidence** | Optional evidence-quality diagnostic; disabled by default. |
@@ -179,10 +181,11 @@ renamed to a friendly location such as **SaltWatch Utility Room**.
 
 ## Testing without hardware
 
-`saltwatch-emulator.yaml` creates a complete virtual SaltWatch device on a
-macOS or Linux computer. It uses ESPHome's host platform, so the SaltWatch Card
-sees the same device relationship, ESPHome entity metadata, and stable original
-entity names as it would with the physical monitor.
+`saltwatch-emulator.yaml` creates a virtual device for testing SaltWatch Card on
+a macOS or Linux computer. It uses ESPHome's host platform and exposes the card's
+salt-level, status, forecast, and threshold entities with the same names and
+device relationship as the physical monitor. It does not emulate the sensor,
+calibration controls, LED, web interface, or firmware updater.
 
 From a local checkout with ESPHome installed, run:
 
@@ -261,31 +264,27 @@ design is documented in the [technical reference](docs/technical-reference.md).
 
 ## Local web interface and updates
 
-After Wi-Fi provisioning, open the MAC-suffixed address shown by ESPHome, such
-as `http://saltwatch-a1b2c3.local/`, or use the device IP. The local interface
-organizes the device into Status, Calibration, Low Salt Alert, Forecast and
-Refill, Device Maintenance, and Diagnostics sections. Low Salt Alert groups
-the existing threshold with the optional onboard LED switch and brightness.
-**Firmware Version** under **Device Maintenance** shows the installed SaltWatch
-release, taken directly from the firmware at startup. It is also available as a
-diagnostic sensor in Home Assistant. The **SaltWatch Firmware Update**
-entity checks the official SaltWatch release manifest every six hours and
-offers an update only when a newer release is available; installation always
-requires explicit approval. Home Assistant may also show a separate, normally
-disabled **Firmware** entity created by ESPHome Device Builder. That entity
-compiles the adopted configuration instead of installing the published
-SaltWatch build. Use **SaltWatch Firmware Update** for standard releases and the
-Device Builder path only for customized firmware or recovery.
+Once SaltWatch is connected to Wi-Fi, open its local address, such as
+`http://saltwatch-a1b2c3.local/`, or its IP address in your browser. Use the web
+interface to check the salt level, calibrate the sensor, track refill estimates,
+and adjust the low-salt threshold and LED alert brightness.
 
-For a firmware file already downloaded to your computer, use the file picker
-in **Firmware Upload**, directly below **Device Maintenance**. Select the OTA
-`.bin` file and choose **Update**.
+**Device Maintenance** shows the installed **Firmware Version** and the
+**SaltWatch Firmware Update** control. Both are also available in Home Assistant.
+SaltWatch checks for new releases every six hours. You choose when to install;
+updates never install automatically.
+
+To install a downloaded firmware file, use **Firmware Upload**, directly below
+**Device Maintenance**. Select the OTA `.bin` file and click **Update**.
+
+Home Assistant may also show a separate **Firmware** entity from ESPHome Device
+Builder, normally disabled. It builds firmware from your adopted configuration.
+Use **SaltWatch Firmware Update** for official releases, and Device Builder for
+customized firmware or recovery.
 
 <p align="center">
-  <img src="docs/images/saltwatch-web-interface.png" alt="SaltWatch local web interface showing the Status, Calibration, Forecast and Refill, Device Maintenance, and Diagnostics sections" width="684">
+  <img src="docs/images/saltwatch-web-interface.png" alt="SaltWatch 2.3.5 web interface showing Status, Calibration, Low Salt Alert, Forecast and Refill, Device Maintenance, Firmware Upload, and Diagnostics" width="684">
 </p>
-
-The screenshot shows release 2.2.6, before the Low Salt Alert section was added.
 
 The web interface and all OTA paths intentionally have no password. Anyone who
 can reach the device can change calibration or replace its firmware. Keep
