@@ -4,6 +4,14 @@ All notable changes to SaltWatch are documented here.
 
 ## Unreleased
 
+## 2.3.2 - 2026-09-22
+
+- Fixed the percent label sitting above the Low Salt LED Brightness slider in
+  the device web interface. The unit now lines up with the slider scale. The
+  corrected interface is bundled on the device and continues to work offline.
+- Improved narrow-screen rows so labels wrap, number controls have their own
+  row, and the calibration input's minimum and maximum stay together.
+
 ## 2.3.1 - 2026-09-22
 
 - Added **Low Salt LED Brightness** in the device web interface's **Low Salt

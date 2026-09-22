@@ -320,6 +320,11 @@ def run() -> None:
     core_text = Path("saltwatch-core.yaml").read_text()
     assert core["esp32"]["framework"]["advanced"]["sram1_as_iram"] is True
     assert core["web_server"]["version"] == 3
+    # Use our embedded offline bundle; ESPHome's stock local page ignores it.
+    assert core["web_server"]["local"] is False
+    assert core["web_server"]["js_url"] == ""
+    web_bundle = Path(core["web_server"]["js_include"]).read_text()
+    assert Path("web/layout.css").read_text() in web_bundle
     assert [group["name"] for group in core["web_server"]["sorting_groups"]] == [
         "Status",
         "Calibration",

@@ -1,0 +1,58 @@
+/* Keep units on the same baseline as their controls. */
+.entity-row > :nth-child(3) {
+  align-items: center;
+  gap: 4px;
+}
+
+/* Keep the minimum, input, and maximum together. */
+.range {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .entity-row {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 10px 8px;
+  }
+
+  .entity-row > :first-child {
+    grid-column: 1;
+    grid-row: 1;
+    line-height: 1.4;
+  }
+
+  .entity-row > :nth-child(2) {
+    min-width: 0;
+    margin: 0;
+    text-wrap: wrap;
+    overflow: visible;
+    line-height: 1.35;
+  }
+
+  .entity-row > :nth-child(3) {
+    min-width: 0;
+    margin: 0;
+    justify-content: flex-end;
+  }
+
+  /* Give number controls a full row below their unabridged label. */
+  .entity-row:has(.range),
+  .entity-row:has(esp-range-slider) {
+    grid-template-columns: 28px minmax(0, 1fr);
+  }
+
+  .entity-row:has(.range) > :nth-child(3),
+  .entity-row:has(esp-range-slider) > :nth-child(3) {
+    grid-column: 2;
+    margin-top: 4px;
+  }
+
+  .entity-row:has(esp-range-slider) > :nth-child(3) {
+    margin-top: 12px;
+  }
+}

@@ -1,5 +1,5 @@
 substitutions:
-  project_version: "2.3.1"
+  project_version: "2.3.2"
   sensor_min_cm: "5.0"
   sensor_max_cm: "120.0"
   minimum_calibration_span_cm: "10.0"
@@ -71,7 +71,11 @@ api:
 web_server:
   port: 80
   version: 3
-  local: true
+  # Serve the bundled offline UI with the slider unit-alignment correction.
+  # The stock local page bypasses js_include, so use our local script instead.
+  local: false
+  js_url: ""
+  js_include: web/saltwatch-web.js
   compression: gzip
   log: false
   sorting_groups:

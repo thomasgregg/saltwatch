@@ -7,6 +7,8 @@
 | Path | Purpose |
 | --- | --- |
 | `saltwatch-core.yaml` | Shared, credential-free hardware and monitoring configuration. |
+| `web/` | Bundled offline device interface with the slider unit-alignment fix and upstream license. |
+| `tools/build_web_ui.py` | Regenerates the bundled interface from the validated ESPHome version. |
 | `saltwatch.yaml` | Production entry point with Wi-Fi credentials and encrypted API key. |
 | `saltwatch-webinstall.yaml` | Credential-free browser-installer build and adoption metadata. |
 | `saltwatch-emulator.yaml` | Hardware-free ESPHome host device for Home Assistant and card testing. |
@@ -50,7 +52,7 @@ web interface intentionally do not have credentials.
 
 ## ESPHome version
 
-SaltWatch 2.3.1 is validated with:
+SaltWatch 2.3.2 is validated with:
 
 - ESPHome 2026.9.0
 - ESP-IDF 5.5.5
@@ -125,22 +127,22 @@ The published browser and OTA images are scanned for validation credentials,
 checked for the ESP32 image header, and hashed before and after GitHub Pages
 deployment. The manifest's OTA MD5 must match the published OTA image.
 
-## Current v2.3.1 build results
+## Current v2.3.2 build results
 
 | Build | RAM | Application flash | Result |
 | --- | ---: | ---: | --- |
 | Production | 29.3% | 56.9% | Passed |
 | Browser installer | 29.4% | 57.4% | Passed |
 
-The v2.3.1 hosted images are generated and verified as part of the release
+The v2.3.2 hosted images are generated and verified as part of the release
 process. Their final sizes and SHA-256 hashes are recorded below:
 
 ```text
-Factory size: 1,119,168 bytes
-Factory SHA-256: 442a93d8e48da21e9560528a443e38e275b452e223a6d158df5c7966bc957ebd
-OTA size: 1,053,632 bytes
-OTA MD5: 98fb410b231058633e76ad5629710f8c
-OTA SHA-256: a11772bdf751dbd7698a2ce39916baebc43bf6cd36ea4896baf572cd766f9f5a
+Factory size: 1,119,776 bytes
+Factory SHA-256: 2df6d6ddc89861d3f299b6b9ba26fd2b62e66ef9569bca79aca8d774da57d2c9
+OTA size: 1,054,240 bytes
+OTA MD5: 55dd9dad62319149c35c8f75f6dece6b
+OTA SHA-256: c2f9085209272198128c03e1ba98035295ed3139df96f2ebbb2fbb5b262bac23
 ```
 
 ## Configuration audit expectations
