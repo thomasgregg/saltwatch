@@ -3,7 +3,8 @@
 **See your water-softener salt level in Home Assistant and know when it is time
 to refill.**
 
-[![ESPHome validation](https://github.com/thomasgregg/saltwatch/actions/workflows/esphome.yml/badge.svg)](https://github.com/thomasgregg/saltwatch/actions/workflows/esphome.yml)
+[![Latest release](https://img.shields.io/github/v/release/thomasgregg/saltwatch)](https://github.com/thomasgregg/saltwatch/releases/latest)
+[![ESPHome validation](https://github.com/thomasgregg/saltwatch/actions/workflows/esphome.yml/badge.svg?branch=main)](https://github.com/thomasgregg/saltwatch/actions/workflows/esphome.yml?query=branch%3Amain)
 
 **[Install SaltWatch in your browser](https://thomasgregg.github.io/saltwatch/)**
 
