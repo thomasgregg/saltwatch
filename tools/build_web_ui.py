@@ -5,6 +5,7 @@ import gzip
 from importlib.metadata import version
 from pathlib import Path
 import re
+from urllib.parse import quote
 
 import esphome
 
@@ -21,6 +22,22 @@ def main():
     html = gzip.decompress(bytes(int(x, 16) for x in re.findall(r"0x([0-9a-f]{2})", array))).decode()
     script = re.search(r"<script\b[^>]*>(.*?)</script>", html, re.S).group(1)
     web = Path(__file__).resolve().parents[1] / "web"
+    # Share one embedded asset between the header and favicon, including offline.
+    icon = (web / "saltwatch-icon.svg").read_text().strip()
+    icon_url = "data:image/svg+xml," + quote(icon, safe="")
+    script = replace_once(
+        script,
+        '<a href="https://esphome.io/web-api" id="logo" title="${this.version}">'
+        '<esp-logo style="width:52px;height:40px"></esp-logo></a>',
+        '<a href="https://github.com/thomasgregg/saltwatch" id="logo" '
+        'title="SaltWatch project on GitHub" aria-label="SaltWatch project on GitHub" '
+        'target="_blank" rel="noopener noreferrer">'
+        f'<img src="{icon_url}" alt="SaltWatch" width="52" height="40" '
+        'style="object-fit:contain;object-position:center"></a>',
+    )
+    favicon = re.search(r'n&&\(n\.href=`data:image/svg\+xml,.*?</svg>`\)', script)
+    assert favicon is not None, "Upstream favicon changed; review the patch"
+    script = replace_once(script, favicon.group(0), f'n&&(n.href=`{icon_url}`)')
     marker = "input[type=color]::-webkit-color-swatch-wrapper{padding:0!important}"
     assert script.count(marker) == 1, "Upstream layout changed; review the patch"
     css = (web / "layout.css").read_text()

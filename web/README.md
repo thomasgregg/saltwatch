@@ -5,6 +5,10 @@
 unbroken number inputs, and a narrow-screen layout that puts number controls
 below their full labels.
 
+The header uses the blue SaltWatch icon in `saltwatch-icon.svg` and links to
+the SaltWatch GitHub project in a new tab. The same SVG is embedded as the
+browser favicon; neither icon needs internet access.
+
 The **Forecast and Refill** group includes **Refill Status** below the
 manual control. Its short messages use the existing entity layout. Manual recording waits for fresh readings;
 the status lets someone who walked away check its result later.

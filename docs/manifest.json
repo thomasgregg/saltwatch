@@ -1,6 +1,6 @@
 {
   "name": "SaltWatch",
-  "version": "2.4.1",
+  "version": "2.4.2",
   "home_assistant_domain": "esphome",
   "new_install_prompt_erase": true,
   "builds": [
@@ -8,15 +8,15 @@
       "chipFamily": "ESP32",
       "parts": [
         {
-          "path": "saltwatch-2.4.1.factory.bin",
+          "path": "saltwatch-2.4.2.factory.bin",
           "offset": 0
         }
       ],
       "ota": {
-        "md5": "1890fe6efe44e257a7eda00e8d334b2c",
-        "path": "saltwatch-2.4.1.ota.bin",
-        "release_url": "https://github.com/thomasgregg/saltwatch/releases/tag/v2.4.1",
-        "summary": "Adds Check for Updates and Restart Device in Home Assistant and Device Maintenance."
+        "md5": "367719ea540124edb127625d7f59aa5d",
+        "path": "saltwatch-2.4.2.ota.bin",
+        "release_url": "https://github.com/thomasgregg/saltwatch/releases/tag/v2.4.2",
+        "summary": "Adds the blue SaltWatch header icon, GitHub project link, and matching offline browser favicon."
       }
     }
   ]

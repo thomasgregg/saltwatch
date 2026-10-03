@@ -2,6 +2,12 @@
 
 All notable changes to SaltWatch are documented here.
 
+## 2.4.2 - 2026-10-03
+
+- Added a blue SaltWatch header icon linking to GitHub in a new tab, with
+  the same icon as the browser favicon. Both icons are embedded for offline
+  display, and the original header spacing is preserved.
+
 ## 2.4.1 - 2026-10-03
 
 - Added **Check for Updates** and **Restart Device** to Device Maintenance and
