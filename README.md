@@ -314,7 +314,9 @@ Use **SaltWatch Firmware Update** for official releases, and Device Builder for
 customized firmware or recovery.
 
 <p align="center">
-  <img src="docs/images/saltwatch-web-interface.png" alt="SaltWatch 2.4.2 web interface showing Status, Calibration, Low Salt Alert, Forecast and Refill, Device Maintenance, Firmware Upload, and Diagnostics" width="684">
+  <a href="docs/images/saltwatch-web-interface.png">
+    <img src="docs/images/saltwatch-web-interface.png" alt="SaltWatch 2.4.2 web interface showing Status, Calibration, Low Salt Alert, Forecast and Refill, Device Maintenance, Firmware Upload, and Diagnostics" width="380">
+  </a>
 </p>
 
 The web interface and all OTA paths intentionally have no password. Anyone who
