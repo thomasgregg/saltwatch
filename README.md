@@ -167,6 +167,8 @@ rules, manual calibration, and low-salt behavior.
 | **Refill Status** | Shows collection progress, completion, or why a refill request could not be recorded. |
 | **Firmware Version** | Installed SaltWatch release; also shown under Device Maintenance in the web interface. |
 | **SaltWatch Firmware Update** | Checks for official releases every six hours; installs only when requested. |
+| **Check for Updates** | Checks for an official release immediately, without installing it or restarting. |
+| **Restart Device** | Restarts SaltWatch while keeping saved settings; cancels an unfinished refill request. |
 | **WiFi Signal** | Standard ESPHome diagnostic signal strength. |
 | **Last Valid Measurement Age** | Diagnostic age of the most recent accepted sensor reading; disabled by default. |
 | **Forecast Confidence** | Optional evidence-quality diagnostic; disabled by default. |

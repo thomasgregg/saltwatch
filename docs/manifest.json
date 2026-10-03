@@ -1,6 +1,6 @@
 {
   "name": "SaltWatch",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "home_assistant_domain": "esphome",
   "new_install_prompt_erase": true,
   "builds": [
@@ -8,15 +8,15 @@
       "chipFamily": "ESP32",
       "parts": [
         {
-          "path": "saltwatch-2.4.0.factory.bin",
+          "path": "saltwatch-2.4.1.factory.bin",
           "offset": 0
         }
       ],
       "ota": {
-        "md5": "56a446fa9f2cca4b324878b1d2982266",
-        "path": "saltwatch-2.4.0.ota.bin",
-        "release_url": "https://github.com/thomasgregg/saltwatch/releases/tag/v2.4.0",
-        "summary": "Record a refill with a two-second top-button hold. Fresh readings are collected in the background, with LED feedback and a short Refill Status."
+        "md5": "1890fe6efe44e257a7eda00e8d334b2c",
+        "path": "saltwatch-2.4.1.ota.bin",
+        "release_url": "https://github.com/thomasgregg/saltwatch/releases/tag/v2.4.1",
+        "summary": "Adds Check for Updates and Restart Device in Home Assistant and Device Maintenance."
       }
     }
   ]

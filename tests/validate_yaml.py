@@ -283,6 +283,10 @@ def run() -> None:
     # an ESPHome component responsibility.
     scripts_by_id = {item["id"]: item for item in core["script"]}
     buttons_by_id = {item["id"]: item for item in core["button"]}
+    assert buttons_by_id["check_for_updates"]["on_press"] == [
+        {"update.check": "saltwatch_firmware_update"}
+    ]
+    assert buttons_by_id["restart_device"]["platform"] == "restart"
     assert buttons_by_id["record_salt_refill"]["on_press"] == [
         {"script.execute": "request_salt_refill"}
     ]
@@ -408,6 +412,8 @@ def run() -> None:
         "sorting_group_maintenance": {
             "Firmware Version",
             "SaltWatch Firmware Update",
+            "Check for Updates",
+            "Restart Device",
         },
     }
     actual_web_groups = {group_id: set() for group_id in expected_web_groups}
@@ -427,6 +433,8 @@ def run() -> None:
                 actual_web_groups[group_id].add(entity["name"])
     assert actual_web_groups == expected_web_groups
     expected_icons = {
+        "Check for Updates": "mdi:update",
+        "Restart Device": "mdi:restart",
         "Firmware Version": "mdi:chip",
         "SaltWatch Firmware Update": "mdi:update",
         "Full Distance": "mdi:arrow-up",

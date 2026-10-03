@@ -2,6 +2,12 @@
 
 All notable changes to SaltWatch are documented here.
 
+## 2.4.1 - 2026-10-03
+
+- Added **Check for Updates** and **Restart Device** to Device Maintenance and
+  Home Assistant. A manual check uses the official updater without installing
+  firmware; restart uses ESPHome's native restart control.
+
 ## 2.4.0 - 2026-10-03
 
 - Added a two-second top-button hold and release to request salt refill

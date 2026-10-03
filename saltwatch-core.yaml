@@ -1,5 +1,5 @@
 substitutions:
-  project_version: "2.4.0"
+  project_version: "2.4.1"
   sensor_min_cm: "5.0"
   sensor_max_cm: "120.0"
   minimum_calibration_span_cm: "10.0"
@@ -1635,6 +1635,26 @@ number:
     optimistic: true
 
 button:
+  - platform: template
+    name: "Check for Updates"
+    id: check_for_updates
+    icon: mdi:update
+    entity_category: config
+    web_server:
+      sorting_group_id: sorting_group_maintenance
+      sorting_weight: 20
+    on_press:
+      - update.check: saltwatch_firmware_update
+
+  - platform: restart
+    name: "Restart Device"
+    id: restart_device
+    icon: mdi:restart
+    entity_category: config
+    web_server:
+      sorting_group_id: sorting_group_maintenance
+      sorting_weight: 30
+
   - platform: template
     name: "Set Current Distance as Full"
     id: set_current_distance_as_full

@@ -14,7 +14,7 @@ lambdas and watchdog scripts; it does not use a custom C++ component.
 | Node name | `saltwatch-<MAC suffix>`; for example, `saltwatch-a1b2c3` |
 | Friendly name | `SaltWatch` |
 | ESPHome project | `saltwatch.salt-monitor` |
-| Release | 2.4.0 |
+| Release | 2.4.1 |
 | Board | `m5stack-atom` |
 | Framework | ESP-IDF |
 | I²C | SDA GPIO26, SCL GPIO32 |
@@ -186,6 +186,8 @@ higher-priority problem is active.
 | Low Salt LED Brightness | Configuration number | Persistent warning brightness from 1–100%, default 30%; also available as a web slider. |
 | Set Current Distance as Full | Button | Captures only a valid filtered distance. |
 | Set Current Distance as Empty | Button | Captures only a valid filtered distance. |
+| Check for Updates | Configuration button | Runs the official updater check immediately; does not install firmware. |
+| Restart Device | Configuration button | Native safe reboot, preserving stored settings and cancelling pending refill collection. |
 | Record Salt Refill | Button | Requests recording after five fresh valid readings; preserves learned rates. |
 | Refill Status | Text sensor | Manual collection, completion, or rejection/cancellation reason. |
 | Low Salt | Problem binary sensor | Inclusive threshold with five-point clearing hysteresis. |

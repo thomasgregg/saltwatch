@@ -194,3 +194,16 @@ authentication. Anyone with network access to SaltWatch can change calibration,
 press exposed buttons, or replace the firmware. Keep the device on a trusted,
 preferably isolated IoT network, never expose its ports to the internet, and
 restrict access with firewall rules where possible.
+
+## Check for updates or restart
+
+Open the SaltWatch device in Home Assistant or **Device Maintenance** in the
+local interface. Select **Check for Updates** to check for the latest official
+release immediately. It does not install anything; if an update is available,
+select **SaltWatch Firmware Update** to install it. Internet access is needed
+for the release check. The normal six-hour checks continue automatically.
+
+Select **Restart Device** to reboot SaltWatch from either interface. Saved
+Wi-Fi credentials, calibration, alert settings, and forecast learning remain.
+The device briefly goes offline, and any unfinished refill request is cancelled.
+If you only want to find a new release, use **Check for Updates**.
