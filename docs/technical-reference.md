@@ -14,7 +14,7 @@ lambdas and watchdog scripts; it does not use a custom C++ component.
 | Node name | `saltwatch-<MAC suffix>`; for example, `saltwatch-a1b2c3` |
 | Friendly name | `SaltWatch` |
 | ESPHome project | `saltwatch.salt-monitor` |
-| Release | 2.3.5 |
+| Release | 2.4.0 |
 | Board | `m5stack-atom` |
 | Framework | ESP-IDF |
 | I²C | SDA GPIO26, SCL GPIO32 |
@@ -186,7 +186,8 @@ higher-priority problem is active.
 | Low Salt LED Brightness | Configuration number | Persistent warning brightness from 1–100%, default 30%; also available as a web slider. |
 | Set Current Distance as Full | Button | Captures only a valid filtered distance. |
 | Set Current Distance as Empty | Button | Captures only a valid filtered distance. |
-| Record Salt Refill | Button | Preserves a trustworthy learned rate and starts a clean forecast cycle. |
+| Record Salt Refill | Button | Requests recording after five fresh valid readings; preserves learned rates. |
+| Refill Status | Text sensor | Manual collection, completion, or rejection/cancellation reason. |
 | Low Salt | Problem binary sensor | Inclusive threshold with five-point clearing hysteresis. |
 | Sensor Fault | Problem binary sensor | Raw-invalid, repeated-invalid, startup, timeout, range, and hardware checks. |
 | Calibration Required | Problem binary sensor | Persistent completion, range, order, and minimum-span checks. |
@@ -247,7 +248,7 @@ confirmed cycle's trustworthy rate is retained as exponentially weighted
 historical evidence and blended with the new cycle; changing either calibration
 point clears all learned rates and aggregates.
 
-Automatic confirmation and an accepted **Record Salt Refill** action also set
+Automatic confirmation and a completed manual refill recording also set
 the persistent **Last Recorded Refill** timestamp. Zero represents no recorded
 refill and `-1` represents an accepted refill waiting for Home Assistant time.
 The pending state survives restart and resolves on the next time synchronization.
@@ -259,6 +260,37 @@ Forecast output is forced unavailable during initialization, Sensor Fault,
 Calibration Required, missing Salt Level, or refill confirmation. Low Salt
 publishes 0 forecast days. See the [forecast guide](forecast.md) for the
 user-facing status reference.
+
+## Manual refill coordinator and LED priority
+
+GPIO39 is an active-low input with a 30 ms delayed-on/off debounce; the C008
+provides the button's external pull-up. Initial-state triggering is enabled so
+the first published state establishes a baseline. A held-at-boot button cannot request a refill until released and held
+again. A hold of 2–10 seconds requests recording on release; shorter taps and
+longer holds do nothing.
+
+The physical input and public **Record Salt Refill** button both call
+`request_salt_refill`. Pending state, monotonic timers, and feedback are RAM-only.
+The raw-reading acceptance lambda increments a pending count for each valid
+reading and resets it on rejection. The filtered `on_value` pipeline evaluates
+sensor/calibration state before `process_salt_refill` can commit. Five accepted
+post-request readings replace the five-reading median window; this is not a
+lid-closure or surface-stability detector.
+
+A five-second watchdog cancels on faults or timeout (five minutes); calibration
+learning resets also cancel pending collection. The final commit guard checks
+request/count/timeout, measurement age (<90 seconds), finite level, sensor
+health, calibration, and cooldown. Only the guarded path calls
+`commit_salt_refill`, which retains the existing manual forecast transition.
+Automatic confirmation ends any pending request and sets the same RAM-only
+five-minute cooldown, preventing duplicate manual commits during that uptime.
+
+`update_low_salt_led` owns LED output. A one-second blue, green, or amber
+feedback display temporarily stops the blink effect. A 250 ms update restores
+current low-salt state and settings after feedback, rather than a saved state.
+Normal blinking continues throughout collection outside feedback flashes.
+Feedback uses the configured brightness and works with the alert switch off;
+it does not mutate the alert switch or low-salt state.
 
 ## Deliberately excluded
 

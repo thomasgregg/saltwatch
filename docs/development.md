@@ -52,7 +52,7 @@ web interface intentionally do not have credentials.
 
 ## ESPHome version
 
-SaltWatch 2.3.5 is validated with:
+SaltWatch 2.4.0 is validated with:
 
 - ESPHome 2026.9.0
 - ESP-IDF 5.5.5
@@ -80,6 +80,7 @@ esphome config saltwatch-emulator.yaml
 esphome compile saltwatch-emulator.yaml
 python3 tests/test_logic.py
 python3 tests/test_led.py
+python3 tests/test_refill.py
 python3 tests/validate_yaml.py
 ```
 
@@ -87,8 +88,15 @@ The LED regression check requires a native C++ compiler (`c++`). It extracts
 and executes the state-evaluation, LED-control, and blink-effect lambdas from
 the firmware YAML, checking boundaries, failures, blink timing, and brightness
 changes during both phases without rewriting those algorithms in Python.
-Physical LED color, brightness, timing, and persistence still need the hardware
-acceptance checklist.
+The refill check executes the actual button, raw-reading acceptance,
+request/commit, forecast, automatic-refill, and LED actions with a simulated
+clock. It covers hold boundaries, startup, fresh-reading counts, cancellations,
+duplicate requests, learning preservation, delayed timestamps, and LED handoff.
+Its small action translator fails on unsupported actions instead of silently
+skipping them. GPIO debounce and ESPHome's median filter are framework behavior;
+the harness supplies button events and a five-reading median for integration.
+Physical button operation, LED color, brightness, and persistence still need
+the hardware acceptance checklist.
 
 Run the emulator interactively with `esphome run saltwatch-emulator.yaml`, then
 add the ESPHome integration manually in Home Assistant using the development
@@ -128,22 +136,22 @@ The published browser and OTA images are scanned for validation credentials,
 checked for the ESP32 image header, and hashed before and after GitHub Pages
 deployment. The manifest's OTA MD5 must match the published OTA image.
 
-## Current v2.3.5 build results
+## Current v2.4.0 build results
 
 | Build | RAM | Application flash | Result |
 | --- | ---: | ---: | --- |
-| Production | 29.4% | 56.9% | Passed |
-| Browser installer | 29.5% | 57.5% | Passed |
+| Production | 29.7% | 57.3% | Passed |
+| Browser installer | 29.8% | 57.9% | Passed |
 
-The v2.3.5 hosted images are generated and verified as part of the release
+The v2.4.0 hosted images are generated and verified as part of the release
 process. Their final sizes and SHA-256 hashes are recorded below:
 
 ```text
-Factory size: 1,120,400 bytes
-Factory SHA-256: a8ab44f389854a1cbc21bb547268a29776c7c3a6bc6da59ff3df72ec5a46db67
-OTA size: 1,054,864 bytes
-OTA MD5: e8bff0269bae737c5cc9e37c693089fc
-OTA SHA-256: 8e97eacb3f78013e72ad3473a7705024d0e45d0628575077597c34bcdc385d2a
+Factory size: 1,127,424 bytes
+Factory SHA-256: e65c43fab8b25bf80013475bed2089fcbcb2984637bc7bdf465968808dc744e8
+OTA size: 1,061,888 bytes
+OTA MD5: 56a446fa9f2cca4b324878b1d2982266
+OTA SHA-256: dd54f9d027ba444cec214b737101c862955be9987a9bc639007952fb03cd1a0b
 ```
 
 ## Configuration audit expectations

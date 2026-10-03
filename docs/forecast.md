@@ -17,6 +17,8 @@ restart to perform.
   is unavailable.
 - **Record Salt Refill** — tells the predictor about a small or unusual refill
   that automatic detection may not recognize.
+- **Refill Status** — shows whether a manual request is collecting
+  readings, recorded, or cancelled.
 - **Last Recorded Refill** — remembers the latest automatically confirmed or
   manually recorded refill.
 - **Forecast Confidence** — an optional diagnostic entity, disabled by default.
@@ -85,17 +87,68 @@ another week. As the new cycle develops, its evidence is blended in.
 
 Automatic recognition cannot distinguish every physical event. A persistent
 salt bridge, moving the sensor, or changing the lid position can resemble a
-refill, while a very small top-up may stay below the detection threshold. After
-adding a small amount of salt, wait for Salt Level to settle and press **Record
-Salt Refill**. The button preserves any trustworthy completed-cycle rate and
-starts clean current-cycle learning. It refuses the action unless the current
-Salt Level, sensor health, and calibration are all valid.
+refill, while a very small top-up may stay below the detection threshold.
 
-An accepted manual action also updates **Last Recorded Refill**. If Home
-Assistant has not yet supplied a valid clock, recording the refill and starting
-the new forecast cycle still succeed. The timestamp remains unavailable until
-the next successful clock synchronization and is then set to that synchronization
-time. Rejected button actions do not change the timestamp.
+## Recording a refill yourself
+
+Normal refills are detected automatically. To record a small top-up or avoid
+waiting for automatic confirmation:
+
+1. Add salt and **close the tank lid**.
+2. Hold the ATOM Lite's large top button—the face with the LED—for **two
+   seconds**, then release. Do not use the small side reset button.
+3. Look for a brief blue acknowledgement, then walk away.
+
+Alternatively, select **Record Salt Refill** in Home Assistant or the local
+interface. All three controls use the same procedure.
+
+SaltWatch waits for five consecutive valid distance readings taken after your
+request. With a reading every 30 seconds, this usually takes about two to 2½
+minutes. This replaces readings from before the refill or while the lid was
+open in its smoothing filter. Invalid readings restart the count; a sensor
+fault, calibration change, or five-minute timeout cancels the request.
+
+SaltWatch cannot detect an open lid. Fresh readings do not prove it is closed,
+so always close it before requesting a recording.
+
+A brief green flash confirms completion. Amber means the request was rejected
+or cancelled. Button feedback works even when **Low Salt LED Alert** is off;
+normal low-salt behavior resumes after each flash and continues while readings
+are collected. Check **Refill Status** later if you have walked away.
+
+| Refill Status | Meaning / next step |
+| --- | --- |
+| `Ready` | No manual request has been made since startup. |
+| `Measuring` | Request accepted; no need to wait beside the tank. |
+| `Recorded` | Manual recording completed successfully. |
+| `Auto recorded` | Automatic detection recorded a refill; a pending manual request, if any, is also finished. |
+| `Recently recorded` | A refill was recorded within the last five minutes; another recording is blocked. |
+| `Check sensor` | Check sensor health and current readings, then request again. |
+| `Calibration required` | Complete valid calibration before requesting again. |
+| `Calibration changed` | Calibration changed or became invalid during collection; check it and make a new request. |
+| `Sensor fault` | Collection stopped because trustworthy readings were lost; fix the sensor problem and request again. |
+| `Timed out` | Five consecutive valid readings were not obtained within five minutes; check installation and request again. |
+
+Short taps do nothing. Release after a two-second hold; holds longer than ten
+seconds are ignored. A button held during startup is ignored until released.
+Repeated requests during collection do not restart the wait. After any recorded
+refill, another recording is blocked for five minutes during the same uptime.
+A restart cancels a pending request and clears that temporary cooldown; the
+last recorded timestamp and learned forecast data remain stored.
+
+Recording preserves any trustworthy previous-cycle consumption rate and
+starts clean current-cycle learning. With a usable learned rate, the forecast
+shows **Based on previous refill cycle** and can continue immediately. Without
+one, it returns to **Learning**, initially **0 of 7 days collected**. Sufficient
+real decline and consistent readings are still needed to produce a forecast.
+A small refill may leave the tank low; recording it does not clear that warning.
+
+Only completion updates **Last Recorded Refill**, not the initial blue
+acknowledgement. If Home Assistant has not supplied a valid clock, recording
+still succeeds locally, and the timestamp is filled at the next successful time
+synchronization. Rejected or cancelled requests leave it untouched. A confirmed
+automatic refill during collection completes the pending request without
+recording the same event twice.
 
 The timestamp is stored across normal restarts and firmware updates. It is not
 cleared by calibration or low-threshold changes because it describes a recorded

@@ -20,6 +20,9 @@ jobs:
       - name: Check firmware LED behavior
         run: python3 tests/test_led.py
 
+      - name: Check firmware refill and physical button behavior
+        run: python3 tests/test_refill.py
+
       - name: Validate Home Assistant YAML and release metadata
         run: python3 tests/validate_yaml.py
 

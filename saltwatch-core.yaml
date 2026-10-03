@@ -1,5 +1,5 @@
 substitutions:
-  project_version: "2.3.5"
+  project_version: "2.4.0"
   sensor_min_cm: "5.0"
   sensor_max_cm: "120.0"
   minimum_calibration_span_cm: "10.0"
@@ -31,6 +31,9 @@ esphome:
         - text_sensor.template.publish:
             id: firmware_version
             state: "${project_version}"
+        - text_sensor.template.publish:
+            id: refill_recording_status
+            state: "Ready"
         - delay: 3s
         - lambda: |-
             if (id(tof_distance).is_failed()) {
@@ -413,15 +416,137 @@ globals:
     restore_value: false
     initial_value: "false"
 
+  # Manual requests and feedback are deliberately not restored after a reboot.
+  - id: refill_pending
+    type: bool
+    restore_value: false
+    initial_value: "false"
+  - id: refill_request_started_ms
+    type: uint64_t
+    restore_value: false
+    initial_value: "0"
+  - id: refill_fresh_readings
+    type: int
+    restore_value: false
+    initial_value: "0"
+  - id: refill_has_recorded
+    type: bool
+    restore_value: false
+    initial_value: "false"
+  - id: refill_last_recorded_ms
+    type: uint64_t
+    restore_value: false
+    initial_value: "0"
+  - id: refill_feedback
+    type: int
+    restore_value: false
+    initial_value: "0"
+  - id: refill_feedback_until_ms
+    type: uint64_t
+    restore_value: false
+    initial_value: "0"
+  - id: refill_button_initialized
+    type: bool
+    restore_value: false
+    initial_value: "false"
+  - id: refill_button_armed
+    type: bool
+    restore_value: false
+    initial_value: "false"
+  - id: refill_button_pressed_ms
+    type: uint64_t
+    restore_value: false
+    initial_value: "0"
+
 script:
+  - id: request_salt_refill
+    mode: single
+    then:
+      - lambda: |-
+          const uint64_t now_ms = esp_timer_get_time() / 1000ULL;
+          // Repeated requests cannot extend the timer or reset progress.
+          if (id(refill_pending)) return;
+          std::string reason;
+          if (id(refill_has_recorded) &&
+              now_ms - id(refill_last_recorded_ms) < 300000ULL) {
+            reason = "Recently recorded";
+          } else if (!id(sensor_fault).has_state() || id(sensor_fault).state ||
+                     !id(has_valid_measurement) ||
+                     id(consecutive_invalid_readings) >= ${invalid_reading_limit} ||
+                     now_ms - id(last_valid_measurement_ms) >= ${measurement_timeout_ms}ULL) {
+            reason = "Check sensor";
+          } else if (!id(calibration_required).has_state() ||
+                     id(calibration_required).state) {
+            reason = "Calibration required";
+          } else if (!id(salt_level).has_state() ||
+                     !std::isfinite(id(salt_level).state)) {
+            reason = "Check sensor";
+          }
+          if (!reason.empty()) {
+            id(refill_recording_status).publish_state(reason);
+            id(refill_feedback) = 3;
+          } else {
+            id(refill_pending) = true;
+            id(refill_request_started_ms) = now_ms;
+            id(refill_fresh_readings) = 0;
+            id(refill_recording_status).publish_state("Measuring");
+            id(refill_feedback) = 1;
+          }
+          id(refill_feedback_until_ms) = now_ms + 1000ULL;
+      - script.execute: update_low_salt_led
+
+  - id: process_salt_refill
+    mode: single
+    then:
+      - lambda: |-
+          if (!id(refill_pending)) return;
+          const uint64_t now_ms = esp_timer_get_time() / 1000ULL;
+          std::string reason;
+          if (id(forecast_reset_requested) ||
+              !id(calibration_required).has_state() || id(calibration_required).state) {
+            reason = "Calibration changed";
+          } else if (!id(sensor_fault).has_state() || id(sensor_fault).state ||
+                     !id(has_valid_measurement) ||
+                     id(consecutive_invalid_readings) >= ${invalid_reading_limit} ||
+                     now_ms - id(last_valid_measurement_ms) >= ${measurement_timeout_ms}ULL) {
+            reason = "Sensor fault";
+          } else if (now_ms - id(refill_request_started_ms) >= 300000ULL) {
+            reason = "Timed out";
+          }
+          if (!reason.empty()) {
+            id(refill_pending) = false;
+            id(refill_recording_status).publish_state(reason);
+            id(refill_feedback) = 3;
+            id(refill_feedback_until_ms) = now_ms + 1000ULL;
+          } else if (id(refill_fresh_readings) >= 5) {
+            id(forecast_record_refill).execute();
+          }
+      - script.execute: update_low_salt_led
+
   - id: update_low_salt_led
     then:
       - lambda: |-
+          const uint64_t now_ms = esp_timer_get_time() / 1000ULL;
+          if (id(refill_feedback) != 0 && now_ms < id(refill_feedback_until_ms)) {
+            auto call = id(low_salt_led).make_call();
+            call.set_state(true);
+            call.set_effect("None");
+            const int feedback = id(refill_feedback);
+            call.set_rgb(feedback == 3 ? 1.0f : 0.0f,
+                         feedback == 2 ? 1.0f : (feedback == 3 ? 0.5f : 0.0f),
+                         feedback == 1 ? 1.0f : 0.0f);
+            call.set_brightness(id(low_salt_led_brightness).state / 100.0f);
+            call.set_save(false);
+            call.perform();
+            return;
+          }
+          const bool feedback_ended = id(refill_feedback) != 0;
+          id(refill_feedback) = 0;
           const bool should_blink = id(low_salt_led_alert).state &&
               id(low_salt).has_state() && id(low_salt).state;
           // The effect keeps the logical light on even during its dark phase.
           // Repeated evaluations must not restart it or create flash writes.
-          if (should_blink == id(low_salt_led).remote_values.is_on()) {
+          if (!feedback_ended && should_blink == id(low_salt_led).remote_values.is_on()) {
             return;
           }
           auto call = id(low_salt_led).make_call();
@@ -480,6 +605,12 @@ script:
     mode: restart
     then:
       - lambda: |-
+          if (id(refill_pending)) {
+            id(refill_pending) = false;
+            id(refill_recording_status).publish_state("Calibration changed");
+            id(refill_feedback) = 3;
+            id(refill_feedback_until_ms) = esp_timer_get_time() / 1000ULL + 1000ULL;
+          }
           id(forecast_daily_levels).fill(0.0f);
           id(forecast_daily_days).fill(0);
           id(forecast_daily_count) = 0;
@@ -967,6 +1098,14 @@ script:
             } else if (bucket_level >=
                 id(forecast_refill_base) +
                     ${forecast_refill_confirmation_percent}) {
+              id(refill_has_recorded) = true;
+              id(refill_last_recorded_ms) = esp_timer_get_time() / 1000ULL;
+              if (id(refill_pending)) {
+                id(refill_pending) = false;
+                id(refill_feedback) = 2;
+                id(refill_feedback_until_ms) = id(refill_last_recorded_ms) + 1000ULL;
+              }
+              id(refill_recording_status).publish_state("Auto recorded");
               learn_completed_cycle();
               clear_current_cycle();
               id(forecast_recent_buckets).fill(0.0f);
@@ -1097,7 +1236,35 @@ script:
   - id: forecast_record_refill
     mode: single
     then:
+      - if:
+          condition:
+            lambda: |-
+              const uint64_t now_ms = esp_timer_get_time() / 1000ULL;
+              return id(refill_pending) && id(refill_fresh_readings) >= 5 &&
+                  now_ms - id(refill_request_started_ms) < 300000ULL &&
+                  id(has_valid_measurement) &&
+                  now_ms - id(last_valid_measurement_ms) < 90000ULL &&
+                  id(salt_level).has_state() && std::isfinite(id(salt_level).state) &&
+                  id(sensor_fault).has_state() && !id(sensor_fault).state &&
+                  id(consecutive_invalid_readings) < ${invalid_reading_limit} &&
+                  id(calibration_required).has_state() && !id(calibration_required).state &&
+                  !id(forecast_reset_requested) &&
+                  (!id(refill_has_recorded) ||
+                   now_ms - id(refill_last_recorded_ms) >= 300000ULL);
+          then:
+            - script.execute: commit_salt_refill
+
+  # Only forecast_record_refill calls this after validating the pending request.
+  - id: commit_salt_refill
+    mode: single
+    then:
       - lambda: |-
+          id(refill_pending) = false;
+          id(refill_has_recorded) = true;
+          id(refill_last_recorded_ms) = esp_timer_get_time() / 1000ULL;
+          id(refill_recording_status).publish_state("Recorded");
+          id(refill_feedback) = 2;
+          id(refill_feedback_until_ms) = id(refill_last_recorded_ms) + 1000ULL;
           if (id(forecast_current_model_valid)) {
             const float rate = id(forecast_current_rate);
             const float evidence =
@@ -1537,22 +1704,7 @@ button:
       sorting_group_id: sorting_group_forecast
       sorting_weight: 40
     on_press:
-      - if:
-          condition:
-            lambda: |-
-              return id(salt_level).has_state() &&
-                     std::isfinite(id(salt_level).state) &&
-                     id(sensor_fault).has_state() &&
-                     !id(sensor_fault).state &&
-                     id(calibration_required).has_state() &&
-                     !id(calibration_required).state;
-          then:
-            - script.execute: forecast_record_refill
-          else:
-            - logger.log:
-                level: WARN
-                tag: forecast
-                format: "Record Salt Refill rejected: measurement or calibration unavailable"
+      - script.execute: request_salt_refill
 
 sensor:
   # Internal raw/filter path. Invalid samples are rejected before the median.
@@ -1567,6 +1719,7 @@ sensor:
       - multiply: 100.0
       - lambda: |-
           if (!std::isfinite(x) || x < ${sensor_min_cm} || x > ${sensor_max_cm}) {
+            if (id(refill_pending)) id(refill_fresh_readings) = 0;
             if (id(consecutive_invalid_readings) < 1000) {
               id(consecutive_invalid_readings) += 1;
             }
@@ -1582,6 +1735,9 @@ sensor:
           id(i2c_missing_observed) = false;
           if (first_valid) {
             ESP_LOGI("sensor", "First valid distance: %.1f cm", x);
+          }
+          if (id(refill_pending) && id(refill_fresh_readings) < 5) {
+            id(refill_fresh_readings) += 1;
           }
           return x;
       - median:
@@ -1600,6 +1756,7 @@ sensor:
               id(distance_to_salt).publish_state(NAN);
             }
         - script.execute: evaluate_state
+        - script.execute: process_salt_refill
 
   - platform: template
     name: "Distance to Salt"
@@ -1676,6 +1833,40 @@ sensor:
     update_interval: never
 
 binary_sensor:
+  - platform: gpio
+    id: refill_physical_button
+    internal: true
+    trigger_on_initial_state: true
+    pin:
+      number: GPIO39
+      mode: INPUT
+      inverted: true
+    filters:
+      - delayed_on_off: 30ms
+    on_state:
+      - lambda: |-
+          const uint64_t now_ms = esp_timer_get_time() / 1000ULL;
+          // First state establishes a baseline; a held-at-boot button is ignored.
+          if (!id(refill_button_initialized)) {
+            id(refill_button_initialized) = true;
+            id(refill_button_armed) = !x;
+            return;
+          }
+          if (x) {
+            if (id(refill_button_armed)) {
+              id(refill_button_pressed_ms) = now_ms;
+              id(refill_button_armed) = false;
+            }
+          } else {
+            const uint64_t held_ms = now_ms - id(refill_button_pressed_ms);
+            const bool requested = !id(refill_button_armed) &&
+                id(refill_button_pressed_ms) != 0 &&
+                held_ms >= 2000ULL && held_ms <= 10000ULL;
+            id(refill_button_pressed_ms) = 0;
+            id(refill_button_armed) = true;
+            if (requested) id(request_salt_refill).execute();
+          }
+
   - platform: template
     name: "Low Salt"
     id: low_salt
@@ -1753,6 +1944,15 @@ text_sensor:
     update_interval: never
 
   - platform: template
+    name: "Refill Status"
+    id: refill_recording_status
+    icon: mdi:progress-check
+    web_server:
+      sorting_group_id: sorting_group_forecast
+      sorting_weight: 45
+    update_interval: never
+
+  - platform: template
     name: "Forecast Confidence"
     id: forecast_confidence
     icon: mdi:chart-bell-curve-cumulative
@@ -1764,11 +1964,16 @@ text_sensor:
     update_interval: never
 
 interval:
+  - interval: 250ms
+    then:
+      - script.execute: update_low_salt_led
+
   # Covers repeated invalid readings and the no-valid-reading-at-boot gap in
   # ESPHome's timeout filter, which only starts after its first input.
   - interval: 5s
     then:
       - script.execute: evaluate_state
+      - script.execute: process_salt_refill
 
   # Sample the already validated Salt Level slowly. A six-hour bucket needs at
   # least 36 fresh five-minute samples, so faults and long gaps cannot be

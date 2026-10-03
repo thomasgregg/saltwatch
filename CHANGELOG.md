@@ -2,6 +2,21 @@
 
 All notable changes to SaltWatch are documented here.
 
+## 2.4.0 - 2026-10-03
+
+- Added a two-second top-button hold and release to request salt refill
+  recording. Close the lid first, then walk away; five fresh valid readings
+  are collected in the background before the refill is recorded.
+- Routed Home Assistant and web **Record Salt Refill** through the same delayed
+  recording flow, with sensor/calibration checks, a five-minute timeout and
+  cooldown, and protection against concurrent automatic refill recording.
+- Added **Refill Status**, with blue acknowledgement, green success, and amber
+  rejection/cancellation feedback.
+  Feedback briefly takes priority over the low-salt LED and then restores its
+  current state and settings.
+- Added automated execution of the firmware's refill/button/forecast/LED actions
+  and end-user guidance. Pending requests are cancelled by restarts.
+
 ## 2.3.5 - 2026-09-22
 
 - Restored ESPHome's original file picker and **Update** button in a separate

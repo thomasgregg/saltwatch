@@ -150,8 +150,12 @@ A normal refill is detected automatically from a sustained rise in Salt Level.
 period. If SaltWatch learned a trustworthy earlier cycle, the estimate resumes
 from that rate immediately after confirmation while the new cycle starts.
 
-For a small top-up that does not raise Salt Level by roughly eight percentage
-points, wait for the measurement to settle and press **Record Salt Refill**.
+For a small top-up, or to record a refill sooner, close the lid and hold the
+large top button (the face with the LED) for two seconds, then release. A blue
+flash acknowledges the request; you can walk away while fresh readings are
+collected. Green confirms recording, and amber means it could not finish.
+**Refill Status** shows the result. Selecting **Record Salt Refill**
+in Home Assistant or the local interface uses the same background procedure.
 Do not press it when no salt was added: it deliberately closes the current
 forecast cycle and updates **Last Recorded Refill**. See the
 [forecast guide](forecast.md) for full behavior.

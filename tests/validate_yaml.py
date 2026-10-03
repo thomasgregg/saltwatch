@@ -278,6 +278,33 @@ def run() -> None:
         "forecast_record_refill",
     } <= script_ids
 
+    # Manual paths share one coordinator; count raw readings before filtering,
+    # and commit only after filtered state evaluation. Hardware debounce remains
+    # an ESPHome component responsibility.
+    scripts_by_id = {item["id"]: item for item in core["script"]}
+    buttons_by_id = {item["id"]: item for item in core["button"]}
+    assert buttons_by_id["record_salt_refill"]["on_press"] == [
+        {"script.execute": "request_salt_refill"}
+    ]
+    physical = next(item for item in core["binary_sensor"]
+                    if item["id"] == "refill_physical_button")
+    assert physical["internal"] is True
+    assert physical["trigger_on_initial_state"] is True
+    assert physical["pin"] == {"number": "GPIO39", "mode": "INPUT", "inverted": True}
+    assert physical["filters"] == [{"delayed_on_off": "30ms"}]
+    assert "id(request_salt_refill).execute();" in physical["on_state"][0]["lambda"]
+    raw_sensor = core["sensor"][0]
+    assert raw_sensor["filters"][2]["median"]["window_size"] == 5
+    assert raw_sensor["on_value"]["then"][-2:] == [
+        {"script.execute": "evaluate_state"}, {"script.execute": "process_salt_refill"}
+    ]
+    assert scripts_by_id["forecast_record_refill"]["then"][0]["if"]["then"] == [
+        {"script.execute": "commit_salt_refill"}
+    ]
+    for item in core["globals"]:
+        if item["id"].startswith("refill_"):
+            assert item["restore_value"] is False
+
     sensors = {item.get("name"): item for item in core["sensor"]}
     assert sensors["Estimated Days Until Low Salt"]["update_interval"] == "never"
     assert sensors["Last Recorded Refill"] == {
@@ -372,6 +399,7 @@ def run() -> None:
             "Last Recorded Refill",
             "Forecast Confidence",
             "Forecast Details",
+            "Refill Status",
         },
         "sorting_group_diagnostics": {
             "Last Valid Measurement Age",
@@ -423,6 +451,7 @@ def run() -> None:
         "Forecast Status": "mdi:chart-timeline-variant",
         "Forecast Details": "mdi:information-outline",
         "Forecast Confidence": "mdi:chart-bell-curve-cumulative",
+        "Refill Status": "mdi:progress-check",
     }
     actual_icons = {}
     for domain in (

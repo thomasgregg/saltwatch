@@ -53,6 +53,7 @@ dashboard setup.
 - [Calibration](#calibration)
 - [Home Assistant entities](#home-assistant-entities)
 - [Testing without hardware](#testing-without-hardware)
+- [After adding salt](#after-adding-salt)
 - [Forecast](#forecast)
 - [Notifications](#notifications)
 - [Trustworthy failure behavior](#trustworthy-failure-behavior)
@@ -162,7 +163,8 @@ rules, manual calibration, and low-salt behavior.
 | **Low Salt LED Brightness** | Brightness of the onboard warning LED, adjustable from 1–100%; defaults to 30% and is remembered. |
 | **Set Current Distance as Full** | Captures the current filtered distance as full. |
 | **Set Current Distance as Empty** | Captures the current filtered distance as empty. |
-| **Record Salt Refill** | Starts a new forecast cycle after a small or unusual refill that was not detected automatically. |
+| **Record Salt Refill** | Requests a refill recording after fresh readings are collected; also available through the top button. |
+| **Refill Status** | Shows collection progress, completion, or why a refill request could not be recorded. |
 | **Firmware Version** | Installed SaltWatch release; also shown under Device Maintenance in the web interface. |
 | **SaltWatch Firmware Update** | Checks for official releases every six hours; installs only when requested. |
 | **WiFi Signal** | Standard ESPHome diagnostic signal strength. |
@@ -205,6 +207,33 @@ sensor unavailable and test fault, calibration, initialization, or forecast
 learning displays. The emulator remains available only while its process is
 running and should be used on a trusted development network.
 
+## After adding salt
+
+SaltWatch detects normal refills automatically—you do not have to press anything.
+For a small top-up, or to record a refill sooner:
+
+1. Add salt and close the tank lid.
+2. Hold the ATOM Lite's **large top button—the face with the LED—for two
+   seconds**, then release. The small side button restarts the device.
+3. A brief **blue** flash confirms the request. You can walk away.
+
+SaltWatch collects fresh readings in the background, usually finishing within
+about 2½ minutes. A brief **green** flash confirms the refill was recorded;
+**amber** means the request was rejected or could not finish. Check **Refill
+Status** in Home Assistant or the device interface for the result.
+You can also select **Record Salt Refill** in either interface; it uses the same
+background process.
+
+Previously learned consumption information is kept. If there is no usable
+learned rate yet, the forecast returns to learning. Button flashes work even
+when **Low Salt LED Alert** is disabled. Between flashes, the normal low-salt
+warning continues according to its setting.
+
+**Close the lid before pressing.** SaltWatch cannot detect whether the lid is
+open. Repeated requests while collecting are ignored, and another recording is
+blocked for five minutes after a refill is recorded. See [refill details and
+status messages](docs/forecast.md#recording-a-refill-yourself).
+
 ## Forecast
 
 **Estimated Days Until Low Salt** answers when you are likely to need more salt,
@@ -220,12 +249,12 @@ resume immediately after future refills while new evidence accumulates. See
 handling, confidence, and limitations.
 
 **Last Recorded Refill** remembers when SaltWatch most recently started a new
-forecast cycle because a refill was confirmed automatically or the **Record
-Salt Refill** button was accepted. It is informational only and never changes
+forecast cycle because a refill was confirmed automatically or a manual refill
+request finished successfully. It is informational only and never changes
 the forecast calculation. A possible refill does not update the timestamp
 until its second six-hour value confirms the rise. If Home Assistant time is
-temporarily unavailable during a manual refill, the forecast cycle still
-starts immediately and the timestamp is completed at the next successful time
+temporarily unavailable when a manual refill finishes, the forecast cycle still
+starts and the timestamp is completed at the next successful time
 synchronization.
 
 ## Notifications

@@ -159,3 +159,26 @@ Do not rely on low-salt alerts until this checklist passes.
     `Learning` when no prior trustworthy cycle exists.
 31. For a small test top-up, press **Record Salt Refill** after the displayed
     level settles and confirm a new forecast cycle starts.
+
+## Physical refill button acceptance
+
+1. Add salt, close the lid, hold the large top button for two seconds, then
+   release. Check for a blue flash and `Measuring`; walk away
+   and confirm `Recorded` after roughly 2½ minutes, with a green flash.
+2. Confirm short taps, holds longer than ten seconds, and a button held during
+   startup do not request a recording. Check one request per hold/release.
+3. With the low-salt LED enabled, confirm its red blinking resumes after blue
+   feedback and continues during collection. Check it resumes after green or
+   amber feedback only if the tank remains low. With the alert disabled, confirm
+   feedback still appears and the LED returns to off.
+4. Disconnect the sensor during collection: check cancellation and amber
+   feedback, with the previous refill timestamp unchanged. Reconnect and check
+   a new request can complete. Restart during collection and verify no refill
+   is recorded after boot without a new request.
+5. Confirm Home Assistant and local **Record Salt Refill** show the same delayed
+   process. Repeat the physical procedure without Home Assistant/Wi-Fi.
+6. Confirm calibration and forecast learning survive normal restarts after
+   completion, and a small top-up can be recorded even if the tank stays low.
+
+The device does not detect lid closure. Test with the lid closed; five fresh
+readings do not establish its physical position.

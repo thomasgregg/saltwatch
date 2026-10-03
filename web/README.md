@@ -5,6 +5,10 @@
 unbroken number inputs, and a narrow-screen layout that puts number controls
 below their full labels.
 
+The **Forecast and Refill** group includes **Refill Status** below the
+manual control. Its short messages use the existing entity layout. Manual recording waits for fresh readings;
+the status lets someone who walked away check its result later.
+
 The native OTA upload form has its own **Firmware Upload** section immediately
 below **Device Maintenance**, using the original file picker and **Update**
 button without a disclosure or helper sentence.
