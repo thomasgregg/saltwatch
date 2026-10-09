@@ -137,7 +137,14 @@ This prevents placeholder values from appearing as a believable percentage.
    available.
 
 Empty means the lowest useful and reliably measurable level, not necessarily
-the physical bottom of the tank. Both distances can also be entered manually.
+the physical bottom of the tank. SaltWatch is intended to warn you to refill
+before the salt drops below the waterline. The sensor cannot reliably measure
+submerged salt and may read the water surface instead. Set the empty point at
+your desired refill level while the salt is still above the water. A reading
+of 0% means that refill point has been reached, not necessarily that the tank
+contains no salt.
+
+Both distances can also be entered manually.
 See the [calibration and operation guide](docs/calibration.md) for validation
 rules, manual calibration, and low-salt behavior.
 

@@ -40,6 +40,16 @@ sensor fault is active.
 Empty Distance is the lowest **useful and reliably measurable** salt level. It
 does not need to be the physical bottom of the tank.
 
+SaltWatch is intended to warn you to refill before the salt drops below the
+waterline. Set the empty point at your desired refill level while the salt is
+still above the water. A reading of 0% means that refill point has been reached,
+not necessarily that the tank contains no salt.
+
+The sensor cannot reliably measure submerged salt and may read the water
+surface instead. If a refill leaves most of the added salt underwater, the
+distance reading may change very little. Entering the distance to the physical
+bottom manually does not make submerged salt measurable.
+
 ## Manual calibration
 
 You do not have to wait for the tank to become empty. Measure or determine the
